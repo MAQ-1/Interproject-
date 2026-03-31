@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { CreateSessionInput, SessionUpsertInput } from "@shared/session";
+import type { CreateSessionInput, SessionUpsertInput } from "../shared/session.js";
 import {
   appendToSession,
   closeSession,

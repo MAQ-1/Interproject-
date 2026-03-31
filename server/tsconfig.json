@@ -2,17 +2,13 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
+    "rootDir": "./src",
+    "outDir": "./dist",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "esnext",
     "moduleResolution": "bundler",
-    "paths": {
-      "@shared": ["../shared/src/index.ts"],
-      "@shared/*": ["../shared/src/*"]
-    },
     "target": "es2020",
     "esModuleInterop": true,
     "types": [],
@@ -48,5 +44,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "include": ["src", "src/types/**/*.d.ts", "../shared/src"]
+  "include": ["src", "src/types/**/*.d.ts"]
 }

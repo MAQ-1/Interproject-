@@ -5,8 +5,8 @@ import type {
   SessionUpsertInput,
   SessionListItem,
   SessionDerivedStats,
-} from "@shared/session";
-import type { Keystroke } from "@shared/keystroke";
+} from "../shared/session.js";
+import type { Keystroke } from "../shared/keystroke.js";
 import Session from "../models/Session.js";
 import Document from "../models/Document.js";
 import { NotFoundError, UnauthorizedError, ValidationError } from "./errors.js";
@@ -48,8 +48,8 @@ type SessionWithLifecycle = {
   documentId?: Types.ObjectId;
   status?: "active" | "closed";
   closedAt?: Date;
-  analytics?: import("@shared/session").SessionAnalytics;
-  keystrokes: import("@shared/keystroke").Keystroke[];
+  analytics?: import("../shared/session.js").SessionAnalytics;
+  keystrokes: import("../shared/keystroke.js").Keystroke[];
   save: () => Promise<unknown>;
 };
 

@@ -11,7 +11,7 @@ const getSingleParam = (
 };
 
 // Helper to normalize keystroke fields (null → undefined or 0 as appropriate)
-import type { Keystroke } from "@shared/keystroke";
+import type { Keystroke } from "../shared/keystroke.js";
 const toNumber = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
 const normalizeKeystroke = (item: any): Keystroke => ({

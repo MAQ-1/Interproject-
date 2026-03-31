@@ -1,4 +1,4 @@
-import type { SessionTextAnalysis } from "../../../shared/src/session";
+import type { SessionTextAnalysis } from "../shared/session.js";
 
 type BehavioralMetrics = {
   approximateWpmVariance: number;

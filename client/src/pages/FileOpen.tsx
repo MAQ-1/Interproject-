@@ -238,6 +238,12 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   const wordCountRef = useRef<number>(0);
   const startWordCountRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalsRef = useRef<number[]>([]);
+  const lastTimestampRef = useRef<number>(Date.now());
+  const microPausesRef = useRef(0);
+  const macroPausesRef = useRef(0);
+  const lastEditTimeRef = useRef<number>(0);
+  const [behaviorScore, setBehaviorScore] = useState(0);
 
   // Keep latest formatting in refs so the Ctrl+S window listener always
   // reads current values without needing to be recreated.
@@ -375,15 +381,36 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
     setPastes(0);
     setPauses(0);
     setWpm(0);
+    intervalsRef.current = [];
+    microPausesRef.current = 0;
+    macroPausesRef.current = 0;
+    lastTimestampRef.current = Date.now();
+    setBehaviorScore(0);
   }, [fileId]);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      const elapsed = (Date.now() - sessionStartRef.current) / 1000 / 60;
-      const currentWords = countWords(editorRef.current?.innerHTML || "");
-      const wordsTyped = Math.max(0, currentWords - startWordCountRef.current);
-      setWpm(elapsed > 0 ? Math.round(wordsTyped / elapsed) : 0);
-    }, 2000);
+      const intervals = intervalsRef.current;
+
+      if (intervals.length < 5) return;
+
+      const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+
+      if (avg === 0) return;
+
+      const newWpm = Math.round(60000 / (avg * 5));
+
+      setWpm((prev) => {
+        return Math.round(prev * 0.7 + newWpm * 0.3);
+      });
+
+      const variance = intervals.reduce((s, v) => s + (v - avg) ** 2, 0) / intervals.length;
+      const std = Math.sqrt(variance);
+      const cv = std / avg;
+      const score = Math.max(0, 100 - cv * 100);
+      setBehaviorScore(Math.round(score));
+    }, 500);
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
@@ -608,13 +635,24 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
       const content = editorRef.current?.innerHTML || "";
       saveDraft(fileId, content);
 
-      setEdits((prev) => prev + 1);
-
       const now = Date.now();
-      if (now - lastKeystrokeRef.current > PAUSE_THRESHOLD_MS) {
-        setPauses((p) => p + 1);
+      const gap = now - lastTimestampRef.current;
+
+      if (gap > 0 && gap < 10000) {
+        intervalsRef.current.push(gap);
+        if (intervalsRef.current.length > 50) {
+          intervalsRef.current.shift();
+        }
       }
-      lastKeystrokeRef.current = now;
+
+      if (gap > 2000) {
+        setPauses((p) => p + 1);
+        macroPausesRef.current++;
+      } else if (gap > 300) {
+        microPausesRef.current++;
+      }
+
+      lastTimestampRef.current = now;
 
       queueKeystrokes([{ action: "down", timestamp: now }]);
 
@@ -650,7 +688,9 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
 
       document.execCommand("insertText", false, text);
 
-      setPastes((p) => p + 1);
+      if (text.length > 20) {
+        setPastes((p) => p + 1);
+      }
       setPasteDetected(true);
 
        queueKeystrokes([
@@ -675,6 +715,14 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
     if (current !== previous) {
       const change = getChangeBounds(previous, current);
       const now = Date.now();
+
+      if (
+        (change.insertedLength > 2 || change.removedLength > 2) &&
+        now - lastEditTimeRef.current > 200
+      ) {
+        setEdits((prev) => prev + 1);
+        lastEditTimeRef.current = now;
+      }
 
       if (change.insertedLength !== 0 || change.removedLength !== 0) {
         queueKeystrokes([
@@ -812,6 +860,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
               />
               <Badge color="#4ade80" label={`WPM: ${wpm}`} />
               <Badge color="#4ade80" label={`Pauses: ${pauses}`} />
+              <Badge color="#4ade80" label={`Human-like: ${behaviorScore}%`} />
             </div>
 
             {/* Editor Card */}

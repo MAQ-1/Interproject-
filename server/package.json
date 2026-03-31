@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "npx tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

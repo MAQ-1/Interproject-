@@ -3,7 +3,7 @@ import type {
   CreateDocumentInput,
   RenameDocumentInput,
   UpdateDocumentContentInput,
-} from "@shared/document";
+} from "../shared/document.js";
 import {
   createDocument,
   deleteDocument,

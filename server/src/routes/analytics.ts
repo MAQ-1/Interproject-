@@ -9,12 +9,16 @@ const router = express.Router();
 // GET endpoint to fetch analytics for a specific document
 router.get("/:documentId", authMiddleware, async (req, res) => {
   try {
-    const { documentId } = req.params;
+    const documentId = Array.isArray(req.params.documentId) ? req.params.documentId[0] : req.params.documentId;
     const userId = req.userId;
 
     // Validate documentId is a valid MongoDB ObjectId
-    if (!Types.ObjectId.isValid(documentId)) {
+    if (!documentId || !Types.ObjectId.isValid(documentId)) {
       return res.status(400).json({ error: "Invalid document ID" });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     // Fetch the document

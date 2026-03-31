@@ -19,7 +19,12 @@ const isAllowedDevOrigin = (origin: string) => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || origin === config.CLIENT_ORIGIN) {
+      const allowedOrigins = [
+        config.CLIENT_ORIGIN,
+        "https://your-vercel-app.vercel.app"
+      ];
+
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
         return;
       }

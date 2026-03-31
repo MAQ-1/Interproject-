@@ -1,4 +1,4 @@
-import type { Keystroke } from '../../../shared/src/keystroke';
+import type { Keystroke } from '../shared/keystroke.js';
 
 interface SuspiciousSegment {
   startIndex: number;
@@ -70,7 +70,8 @@ export const detectAnomalies = (keystrokes: unknown): AnomalyReport => {
   // Detect burst typing (too fast for human)
   let burstStart = -1;
   for (let i = 0; i < intervals.length; i++) {
-    if (intervals[i] < BURST_THRESHOLD) {
+    const interval = intervals[i];
+    if (interval !== undefined && interval < BURST_THRESHOLD) {
       if (burstStart === -1) burstStart = i;
     } else {
       if (burstStart !== -1 && i - burstStart > 15) {
@@ -88,8 +89,9 @@ export const detectAnomalies = (keystrokes: unknown): AnomalyReport => {
   
   // Detect large pastes with no subsequent editing
   for (const paste of pasteEvents) {
-    if (paste.length && paste.length > 100) {
-      const pasteTime = paste.timestamp;
+    const pasteLength = (paste as any).pasteLength || (paste as any).length;
+    if (pasteLength && pasteLength > 100) {
+      const pasteTime = (paste as any).timestamp;
       const subsequentEdits = events.filter(
         (k: any) => k.timestamp > pasteTime && 
              k.timestamp < pasteTime + 30000 &&

@@ -5,7 +5,7 @@ import type {
   DocumentSummary,
   RenameDocumentInput,
   UpdateDocumentContentInput,
-} from "@shared/document";
+} from "../shared/document.js";
 import Document from "../models/Document.js";
 import Session from "../models/Session.js";
 import {
