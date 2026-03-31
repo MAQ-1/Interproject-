@@ -158,7 +158,7 @@ vi-notes/
    REFRESH_COOKIE_NAME=refreshToken
    CLIENT_ORIGIN=http://127.0.0.1:5173
    NODE_ENV=development
-   PORT=3001
+   PORT=5000
    ```
 
 4. **Start development servers**
@@ -168,7 +168,7 @@ vi-notes/
 
    This starts:
    - **Client**: http://127.0.0.1:5173 (Vite dev server)
-   - **Server**: http://127.0.0.1:3001 (Express API)
+   - **Server**: http://127.0.0.1:5000 (Express API)
 
 ---
 
@@ -176,7 +176,7 @@ vi-notes/
 
 ### Base URL
 ```
-http://127.0.0.1:3001
+http://127.0.0.1:5000
 ```
 
 ### Authentication Endpoints

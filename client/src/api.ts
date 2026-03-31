@@ -4,7 +4,7 @@ import { AxiosHeaders } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:3001";
+  import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:5000";
 const AUTH_SESSION_STORAGE_KEY = "vi-notes.auth";
 
 export const api = axios.create({
