@@ -16,9 +16,7 @@ const allowedOrigins = [
 ];
 
 const isAllowedVercelOrigin = (origin: string) => {
-  return /^https:\/\/vi-notes-client(-[a-z0-9]+-[a-z0-9]+)?\.vercel\.app$/.test(
-    origin,
-  );
+  return /^https:\/\/vi-notes-client(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
 };
 
 const isAllowedDevOrigin = (origin: string) => {
@@ -28,28 +26,78 @@ const isAllowedDevOrigin = (origin: string) => {
   );
 };
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        isAllowedVercelOrigin(origin)
-      ) {
-        callback(null, true);
-        return;
-      }
-
-      if (config.NODE_ENV !== "production" && isAllowedDevOrigin(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error("Not allowed by CORS"));
+const validateVercelOriginMatcher = () => {
+  const cases: Array<{ origin: string; expected: boolean }> = [
+    {
+      origin: "https://vi-notes-client.vercel.app",
+      expected: true,
     },
-    credentials: true,
-  }),
-);
+    {
+      origin:
+        "https://vi-notes-client-60ejdz2qf-shivams-projects-04261c20.vercel.app",
+      expected: true,
+    },
+    {
+      origin: "https://vi-notes-client-ab12cd3-scope-12345.vercel.app",
+      expected: true,
+    },
+    {
+      origin: "https://vi-notes-client--bad.vercel.app",
+      expected: true,
+    },
+    {
+      origin: "https://vi-notes-evil.vercel.app",
+      expected: false,
+    },
+    {
+      origin: "https://other-app.vercel.app",
+      expected: false,
+    },
+    {
+      origin: "http://vi-notes-client.vercel.app",
+      expected: false,
+    },
+  ];
+
+  for (const testCase of cases) {
+    const actual = isAllowedVercelOrigin(testCase.origin);
+    if (actual !== testCase.expected) {
+      throw new Error(
+        `Vercel origin matcher failed for ${testCase.origin}. Expected ${testCase.expected}, got ${actual}`,
+      );
+    }
+  }
+};
+
+if (config.NODE_ENV !== "production") {
+  validateVercelOriginMatcher();
+}
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      isAllowedVercelOrigin(origin)
+    ) {
+      callback(null, true);
+      return;
+    }
+
+    if (config.NODE_ENV !== "production" && isAllowedDevOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.options("*", cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
