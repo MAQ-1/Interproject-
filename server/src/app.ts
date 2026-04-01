@@ -31,7 +31,11 @@ const isAllowedDevOrigin = (origin: string) => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || isAllowedVercelOrigin(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        isAllowedVercelOrigin(origin)
+      ) {
         callback(null, true);
         return;
       }
