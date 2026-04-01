@@ -9,6 +9,12 @@ import analyticsRoutes from "./routes/analytics.js";
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://vi-notes-client.vercel.app",
+  config.CLIENT_ORIGIN,
+];
+
 const isAllowedDevOrigin = (origin: string) => {
   return (
     /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0):\d+$/.test(origin) ||
@@ -19,10 +25,6 @@ const isAllowedDevOrigin = (origin: string) => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        config.CLIENT_ORIGIN
-      ];
-
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
         return;

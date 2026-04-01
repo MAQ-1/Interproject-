@@ -35,10 +35,13 @@ if (!parsedEnv.success) {
 
 export const config = parsedEnv.data;
 
+const refreshCookieSameSite: "none" | "lax" =
+  config.NODE_ENV === "production" ? "none" : "lax";
+
 export const refreshCookieOptions = {
   httpOnly: true,
   secure: config.NODE_ENV === "production",
-  sameSite: "lax" as const,
+  sameSite: refreshCookieSameSite,
   path: "/api/auth",
   maxAge: config.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
 };
