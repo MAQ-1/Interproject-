@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { FileText, FolderPlus, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
 import Toast from "../components/Toast";
 import { useDocument } from "../hooks/useDocument";
 
@@ -79,171 +78,186 @@ const FilesPage = () => {
   };
 
   return (
-    <section className="files-page">
-      <div className="files-header">
-        <h1>Files</h1>
-        <p>Create named files, switch between them, and continue writing.</p>
-      </div>
-
-      <form className="files-create" onSubmit={handleCreate}>
-        <label htmlFor="new-file-input" className="sr-only">
-          New file name
-        </label>
-        <input
-          id="new-file-input"
-          value={newName}
-          onChange={(event) => {
-            setNewName(event.target.value);
-            if (createError) {
-              clearCreateError();
-            }
-          }}
-          className="field-input"
-          placeholder="New file name"
-          aria-label="New file name"
-        />
-        <Button type="submit">
-          <FolderPlus size={16} />
-          Create File
-        </Button>
-      </form>
-
-      {createError && <p className="form-inline-error">{createError}</p>}
-
-      {error && <p className="files-error">{error}</p>}
-
-      {isEmpty && (
-        <div className="files-empty-state">
-          <h2>No files yet</h2>
-          <p>Start your first document to begin capturing your writing flow.</p>
-          <Button
-            onClick={() => document.getElementById("new-file-input")?.focus()}
-          >
-            Create your first file
-          </Button>
+    <div className="min-h-screen">
+      <div className="w-full h-full min-h-[calc(100vh-100px)] py-12 px-6 flex flex-col items-center font-sans pt-32">
+      <div className="w-full max-w-5xl flex flex-col gap-10">
+        
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-2">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-800/40 text-orange-400 text-xs font-semibold tracking-widest uppercase mb-4"
+              style={{ background: "rgba(194,65,12,0.1)" }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              Workspace
+            </div>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4" style={{ color: "#ffffff" }}>
+              Your <span className="italic" style={{ color: "#fb923c" }}>Files</span>
+            </h1>
+            <p className="text-white/50 text-base max-w-lg leading-relaxed">
+              Manage your technical documentation and capture your creative flow in one secure, beautiful place.
+            </p>
+          </div>
         </div>
-      )}
 
-      {!isLoading && documents.length > 0 && (
-        <ul className="files-list" aria-label="File list">
-          {documents.map((document) => {
-            const isEditing = editingId === document._id;
+        {/* Create Input Area */}
+        <div className="p-6 md:p-8 rounded-2xl border border-white/[0.07] relative overflow-hidden shadow-2xl" 
+             style={{ background: "rgba(20,20,20,0.6)", backdropFilter: "blur(12px)" }}>
+           {/* Subtle warm glow inside the card */}
+           <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-orange-600/10 blur-[90px] rounded-full pointer-events-none" />
+           
+           <form className="relative z-10 flex flex-col sm:flex-row gap-4 w-full" onSubmit={handleCreate}>
+             <input
+               id="new-file-input"
+               value={newName}
+               onChange={(event) => {
+                 setNewName(event.target.value);
+                 if (createError) clearCreateError();
+               }}
+               className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-5 py-3.5 text-white placeholder-white/30 focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.07] transition-all text-sm shadow-inner"
+               placeholder="Name your new document..."
+               aria-label="New file name"
+             />
+             <button type="submit"
+               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-105"
+               style={{ background: "linear-gradient(135deg,#c2410c,#ea580c)", boxShadow: "0 4px 24px rgba(194,65,12,0.3)" }}>
+               <FolderPlus size={18} />
+               Create File
+             </button>
+           </form>
+           {createError && <p className="mt-4 text-sm text-red-400 font-medium flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              {createError}
+           </p>}
+        </div>
 
-            return (
-              <li key={document._id} className="files-item">
-                <div className="files-item-main">
-                  <span className="files-item-icon">
-                    <FileText size={16} />
-                  </span>
+        {error && (
+          <div className="p-4 rounded-xl border border-red-500/20 text-red-400 text-sm font-medium" style={{ background: "rgba(239,68,68,0.06)" }}>
+            {error}
+          </div>
+        )}
 
-                  {isEditing ? (
-                    <div className="files-rename-area">
-                      <label
-                        htmlFor={`rename-file-${document._id}`}
-                        className="sr-only"
-                      >
-                        Rename {document.name}
-                      </label>
-                      <input
-                        id={`rename-file-${document._id}`}
-                        className="field-input"
-                        value={editingName}
-                        placeholder="Rename file"
-                        aria-label={`Rename ${document.name}`}
-                        onChange={(event) => {
-                          setEditingName(event.target.value);
-                          clearRenameError(document._id);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            void handleRename(document._id);
-                          }
-                        }}
-                        autoFocus
-                      />
-                      {renameErrors[document._id] && (
-                        <p className="form-inline-error">
-                          {renameErrors[document._id]}
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="files-open-link"
-                      onClick={() => handleOpen(document._id, document.name)}
-                    >
-                      {document.name}
-                    </button>
-                  )}
-                </div>
+        {/* Empty State */}
+        {isEmpty && (
+           <div className="flex flex-col items-center justify-center py-24 px-6 text-center rounded-2xl border border-white/[0.05] relative overflow-hidden" 
+                style={{ background: "rgba(0,0,0,0.4)" }}>
+             <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 100%, rgba(194,65,12,0.05), transparent 50%)" }} />
+             <div className="relative z-10 flex flex-col items-center">
+               <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-xl" 
+                    style={{ background: "rgba(251,146,60,0.1)", border: "1px solid rgba(251,146,60,0.2)" }}>
+                 <FileText size={32} className="text-orange-400" />
+               </div>
+               <h2 className="text-3xl font-extrabold text-white mb-4">No files yet</h2>
+               <p className="text-white/40 mb-10 max-w-md text-sm leading-relaxed">
+                 Start your first document to begin capturing your writing flow. Your ideas deserve a cinematic, focused environment.
+               </p>
+               <button
+                  type="button"
+                  onClick={() => document.getElementById("new-file-input")?.focus()}
+                  className="px-8 py-3.5 rounded-xl font-bold text-sm text-black transition-all hover:scale-105 hover:shadow-lg"
+                  style={{ background: "#ffffff", boxShadow: "0 4px 20px rgba(255,255,255,0.15)" }}>
+                  Start Writing Today
+               </button>
+             </div>
+           </div>
+        )}
 
-                <div className="files-item-actions">
-                  {isEditing ? (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => void handleRename(document._id)}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingId(null);
-                          setEditingName("");
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="ghost"
+        {/* Document Grid */}
+        {!isLoading && documents.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {documents.map((document) => {
+              const isEditing = editingId === document._id;
+  
+              return (
+                <div key={document._id} className="group flex flex-col p-6 rounded-2xl border border-white/[0.07] transition-all duration-300 hover:border-orange-500/30 hover:-translate-y-1 shadow-lg" 
+                     style={{ background: "rgba(20,20,20,0.5)", backdropFilter: "blur(8px)" }}>
+                  
+                  <div className="flex items-start justify-between mb-5">
+                     <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-inner" 
+                          style={{ background: "rgba(82,39,255,0.12)", border: "1px solid rgba(82,39,255,0.2)" }}>
+                       <FileText size={20} style={{ color: "#a78bfa" }} />
+                     </div>
+                     <div className="flex items-center gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                       {isEditing ? (
+                         <>
+                           <button onClick={() => void handleRename(document._id)} className="p-2 rounded-lg text-green-400 bg-green-400/10 hover:bg-green-400/20 transition-colors" title="Save">
+                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                           </button>
+                           <button onClick={() => { setEditingId(null); setEditingName(""); }} className="p-2 rounded-lg text-white/50 bg-white/5 hover:bg-white/10 hover:text-white transition-colors" title="Cancel">
+                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                           </button>
+                         </>
+                       ) : (
+                         <>
+                           <button onClick={() => { setEditingId(document._id); setEditingName(document.name); }} className="p-2 rounded-lg text-white/40 bg-white/5 hover:bg-white/10 hover:text-white transition-colors shadow-sm" title="Rename">
+                             <Pencil size={14} />
+                           </button>
+                           <button onClick={() => void handleDelete(document._id)} className="p-2 rounded-lg text-white/40 bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-colors shadow-sm" title="Delete">
+                             <Trash2 size={14} />
+                           </button>
+                         </>
+                       )}
+                     </div>
+                  </div>
+
+                  <div className="flex-1 flex flex-col justify-center">
+                    {isEditing ? (
+                      <div className="w-full">
+                        <input
+                          id={`rename-file-${document._id}`}
+                          className="w-full bg-black/40 border border-orange-500/40 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 text-base font-semibold transition-all"
+                          value={editingName}
+                          placeholder="Rename file"
+                          onChange={(event) => {
+                            setEditingName(event.target.value);
+                            clearRenameError(document._id);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              void handleRename(document._id);
+                            }
+                          }}
+                          autoFocus
+                        />
+                        {renameErrors[document._id] && (
+                          <p className="mt-2 text-xs text-red-400 font-medium">{renameErrors[document._id]}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="text-left w-full text-xl font-bold text-white/95 hover:text-orange-400 transition-colors truncate"
                         onClick={() => handleOpen(document._id, document.name)}
                       >
-                        Open
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingId(document._id);
-                          setEditingName(document.name);
-                        }}
-                      >
-                        <Pencil size={14} />
-                        Rename
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => void handleDelete(document._id)}
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </Button>
-                    </>
+                        {document.name}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {!isEditing && (
+                    <div className="mt-5 pt-4 border-t border-white/[0.06] flex justify-between items-center text-xs">
+                      <span className="text-white/30 uppercase tracking-wider font-semibold">Ready</span>
+                      <button onClick={() => handleOpen(document._id, document.name)} className="text-orange-400/90 hover:text-orange-400 font-bold uppercase tracking-widest flex items-center gap-1.5 group/btn transition-colors">
+                        Open <span className="group-hover/btn:translate-x-1 transition-transform">→</span>
+                      </button>
+                    </div>
                   )}
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              );
+            })}
+          </div>
+        )}
 
-      {pageError && (
-        <Toast
-          message={pageError}
-          type="error"
-          onClose={() => setPageError(null)}
-        />
-      )}
-    </section>
+        {pageError && (
+          <Toast
+            message={pageError}
+            type="error"
+            onClose={() => setPageError(null)}
+          />
+        )}
+      </div>
+      </div>
+    </div>
   );
 };
 

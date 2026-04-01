@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import type { AccessTokenResponse } from "@shared/auth";
 import { api, getAccessToken, setAccessToken, clearAuthSession } from "./api";
 import Navbar from "./components/Navbar";
@@ -11,6 +11,8 @@ import VerifyPage from "./pages/VerifyPage";
 import GuestRoute from "./routes/GuestRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import FileOpen from "./pages/FileOpen";
+import LandingPage from "./pages/LandingPage";
+
 function App() {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<"dark" | "light">(() => {
@@ -119,7 +121,7 @@ function App() {
             <Route
               path="/"
               element={
-                <Navigate to={isAuth ? "/files" : "/login"} replace />
+                <LandingPage />
               }
             />
 

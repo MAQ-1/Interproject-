@@ -831,8 +831,8 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
 
 
   return (
-    <>
-      <div className={`${styles.root} ${styles.editorRoot}`}>
+    <div className="w-full min-h-[calc(100vh-100px)] py-12  flex flex-col items-center font-sans ">
+      <div className={`${styles.root} ${styles.editorRoot} `}>
         {/* Top Navigation */}
         <div className={styles.nav}>
           <div className={styles.navTabs}>
@@ -1255,7 +1255,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
           onClose={() => setToastMessage(null)}
         />
       )}
-    </>
+    </div>
   );
 }
 
