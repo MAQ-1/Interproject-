@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import Toast from "../components/Toast";
 import styles from "./FileOpen.module.css";
+import { OverviewAnalyticsHero } from "../components/OverviewCharts";
 
 interface Session {
   _id?: string;
@@ -134,6 +135,7 @@ function getFileData(fileId: string, fileName: string): FileData {
     textColor: DEFAULT_FORMATTING.textColor,
     bgColor: DEFAULT_FORMATTING.bgColor,
     customColor: DEFAULT_FORMATTING.customColor,
+    // ... rest of the content will be handled in chunks if need be but actually I'll just write the full file.
     customBg: DEFAULT_FORMATTING.customBg,
     scrollPosition: DEFAULT_FORMATTING.scrollPosition,
   };
@@ -240,8 +242,8 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   const avgWpm =
     totalSessions > 0
       ? Math.round(
-          fileData.sessions.reduce((a, s) => a + s.wpm, 0) / totalSessions,
-        )
+        fileData.sessions.reduce((a, s) => a + s.wpm, 0) / totalSessions,
+      )
       : 0;
   const totalDuration = fileData.sessions.reduce((a, s) => a + Number(s.duration), 0);
 
@@ -258,8 +260,6 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   const lastEditTimeRef = useRef<number>(0);
   const [behaviorScore, setBehaviorScore] = useState(0);
 
-  // Keep latest formatting in refs so the Ctrl+S window listener always
-  // reads current values without needing to be recreated.
   const fontRef = useRef(font);
   const fontSizeRef = useRef(fontSize);
   const textColorRef = useRef(textColor);
@@ -619,10 +619,8 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
       const content = editorRef.current?.innerHTML || "";
       if (!content.trim()) return;
 
-      // Save draft instantly (guaranteed)
       saveDraft(fileId, content);
 
-      // Try saving session (best effort)
       handleSaveSession();
 
       e.preventDefault();
@@ -713,7 +711,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
       }
       setPasteDetected(true);
 
-       queueKeystrokes([
+      queueKeystrokes([
         {
           action: "paste",
           timestamp: now,
@@ -829,423 +827,360 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   const fontClass = FONT_CLASS_MAP[font] || styles.fontCalibri;
   const fontSizeClass = FONT_SIZE_CLASS_MAP[fontSize] || styles.fontSize14;
 
-
   return (
-    <div className="w-full min-h-[calc(100vh-100px)] py-12  flex flex-col items-center font-sans ">
-      <div className={`${styles.root} ${styles.editorRoot} `}>
-        {/* Top Navigation */}
-        <div className={styles.nav}>
-          <div className={styles.navTabs}>
-            {(["overview", "sessions", "write"] as const).map((tab) => (
-              <button
-                key={tab}
-                className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-          {onClose && (
-            <button className={styles.closeBtn} onClick={onClose}>
-              ✕ Close
-            </button>
-          )}
-        </div>
+    <div className="file-open-page min-h-screen bg-[#0B0B0B] relative overflow-hidden">
+      {/* Stable Premium Background Effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-gradient-to-r from-[#FF6A00] to-[#FF8C42] opacity-[0.025] blur-[80px] rounded-full" />
+        <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-gradient-to-l from-[#FF8C42] to-[#FFB366] opacity-[0.015] blur-[60px] rounded-full" />
+        <div className="absolute inset-0 opacity-[0.01]" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,106,0,0.2) 1px, transparent 0)`,
+          backgroundSize: '60px 60px'
+        }} />
+      </div>
 
-        <div className={styles.divider} />
+      <div className="relative z-10 min-h-screen">
+        <div className="w-full max-w-[2600px] mx-auto px-6 md:px-12 lg:px-16 py-10">
 
-        {/* Write Tab */}
-        {activeTab === "write" && (
-          <div className={styles.writeContainer}>
-            {/* Status Badges */}
-            <div className={styles.badges}>
-              <Badge color="#4ade80" label="Keystroke capture active" />
-              <Badge
-                color="#f59e0b"
-                label={pasteDetected ? "Paste detected!" : "Paste detection on"}
-                pulse={pasteDetected}
-              />
-              <Badge color="#4ade80" label={`WPM: ${wpm}`} />
-              <Badge color="#4ade80" label={`Pauses: ${pauses}`} />
-              <Badge color="#4ade80" label={`Human-like: ${behaviorScore}%`} />
-              <Badge color="#f59e0b" label={`Deviation: ${baselineDeviation}%`} />
-            </div>
-
-            {/* Editor Card */}
-            <div className={styles.editorCard}>
-              {/* Toolbar Row 1 */}
-              <div className={styles.toolbar}>
-                <select
-                  className={styles.select}
-                  aria-label="Font family"
-                  title="Font family"
-                  value={font}
-                  onChange={(e) => applyFont(e.target.value)}
-                >
-                  {FONTS.map((f) => (
-                    <option key={f} value={f}>
-                      {f}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className={`${styles.select} ${styles.selectSmall}`}
-                  aria-label="Font size"
-                  title="Font size"
-                  value={fontSize}
-                  onChange={(e) => applySize(Number(e.target.value))}
-                >
-                  {FONT_SIZES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-
-                <div className={styles.toolbarSep} />
-                <ToolBtn
-                  label="B"
-                  bold
-                  onClick={() => exec("bold")}
-                  title="Bold"
-                />
-                <ToolBtn
-                  label="I"
-                  italic
-                  onClick={() => exec("italic")}
-                  title="Italic"
-                />
-                <ToolBtn
-                  label="U"
-                  underline
-                  onClick={() => exec("underline")}
-                  title="Underline"
-                />
-                <ToolBtn
-                  label="S"
-                  strike
-                  onClick={() => exec("strikeThrough")}
-                  title="Strikethrough"
-                />
-                <div className={styles.toolbarSep} />
-                <ToolBtn
-                  label="H1"
-                  onClick={() => applyHeading("h1")}
-                  title="Heading 1"
-                />
-                <ToolBtn
-                  label="H2"
-                  onClick={() => applyHeading("h2")}
-                  title="Heading 2"
-                />
-                <ToolBtn
-                  label="H3"
-                  onClick={() => applyHeading("h3")}
-                  title="Heading 3"
-                />
-                <ToolBtn
-                  label="¶"
-                  onClick={() => applyHeading("p")}
-                  title="Paragraph"
-                />
-                <div className={styles.toolbarSep} />
-                <ToolBtn
-                  label="≡"
-                  onClick={() => exec("justifyLeft")}
-                  title="Align Left"
-                />
-                <ToolBtn
-                  label="≡"
-                  onClick={() => exec("justifyCenter")}
-                  title="Center"
-                  centerAlign
-                />
-                <ToolBtn
-                  label="≡"
-                  onClick={() => exec("justifyRight")}
-                  title="Align Right"
-                />
-                <ToolBtn
-                  label="≡"
-                  onClick={() => exec("justifyFull")}
-                  title="Justify"
-                />
-              </div>
-
-              {/* Toolbar Row 2 */}
-              <div className={`${styles.toolbar} ${styles.toolbarCompact}`}>
-                <div className={styles.colorGroup}>
-                  <div
-                    className={`${styles.colorSwatch} ${styles.colorSwatchWhite}`}
-                    onClick={() => applyTextColor("#ffffff")}
-                    title="White text"
-                  />
-                  <div
-                    className={`${styles.colorSwatch} ${styles.colorSwatchAmber}`}
-                    onClick={() => applyTextColor("#f59e0b")}
-                    title="Amber text"
-                  />
-                </div>
-
-                <div className={styles.toolbarSep} />
-
-                <label
-                  className={styles.colorPickerWrap}
-                  title="Custom text color"
-                >
-                  <input
-                    type="color"
-                    value={customColor}
-                    className={styles.colorInputVisible}
-                    aria-label="Custom text color"
-                    title="Custom text color"
-                    onChange={(e) => {
-                      setCustomColor(e.target.value);
-                      applyTextColor(e.target.value);
-                    }}
-                  />
-                </label>
-
-                <label
-                  className={styles.colorPickerWrap}
-                  title="Custom highlight color"
-                >
-                  <input
-                    type="color"
-                    value={customBg}
-                    className={styles.colorInputVisible}
-                    aria-label="Custom highlight color"
-                    title="Custom highlight color"
-                    onChange={(e) => {
-                      setCustomBg(e.target.value);
-                      applyBgColor(e.target.value);
-                    }}
-                  />
-                </label>
-
-                <div className={styles.toolbarSep} />
-                <ToolBtn
-                  label="• —"
-                  onClick={() => exec("insertUnorderedList")}
-                  title="Bullet List"
-                />
-                <ToolBtn
-                  label="1."
-                  onClick={() => exec("insertOrderedList")}
-                  title="Numbered List"
-                />
-                <ToolBtn
-                  label="→"
-                  onClick={() => exec("indent")}
-                  title="Indent"
-                />
-                <ToolBtn
-                  label="←"
-                  onClick={() => exec("outdent")}
-                  title="Outdent"
-                />
-                <ToolBtn label="⎌" onClick={() => exec("undo")} title="Undo" />
-                <ToolBtn label="⎋" onClick={() => exec("redo")} title="Redo" />
-              </div>
-
-              {/* Editable Area */}
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                className={`${styles.editorArea} ${fontClass} ${fontSizeClass}`}
-                onKeyDown={handleKeyDown}
-                onKeyUp={handleKeyUp}
-                onInput={handleInput}
-                onPaste={handlePaste}
-                spellCheck
-              />
-
-              {/* Footer */}
-              <div className={styles.footer}>
-                <div className={styles.footerStats}>
-                  <StatItem label="Words:" value={words} tone="muted" />
-                  <StatItem label="Chars:" value={chars} tone="muted" />
-                  <StatItem label="Edits:" value={edits} tone="accent" />
-                  <StatItem label="Pastes:" value={pastes} tone="muted" />
-                </div>
-                <div className={styles.footerActions}>
-                  <span className={styles.footerHint}>
-                    Ctrl+S to save quietly
-                  </span>
+          {/* Premium Navigation */}
+          <nav className="mb-6">
+            <div className="flex items-center justify-between p-6 rounded-2xl bg-black/30 backdrop-blur-sm border border-white/10 shadow-xl">
+              <div className="flex items-center gap-3">
+                {(["overview", "sessions", "write"] as const).map((tab) => (
                   <button
-                    className={styles.saveBtn}
-                    onClick={handleSaveSession}
+                    key={tab}
+                    className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${activeTab === tab
+                      ? "bg-gradient-to-r from-[#FF6A00] to-[#FF8C42] text-white shadow-md"
+                      : "text-white/70 hover:text-white hover:bg-white/5 border border-white/10 hover:border-white/20"
+                      }`}
+                    onClick={() => setActiveTab(tab)}
                   >
-                    Save session
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
+                ))}
+              </div>
+              {onClose && (
+                <button
+                  className="px-4 py-3 rounded-xl text-white/70 hover:text-white hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 transition-all duration-200 font-medium"
+                  onClick={onClose}
+                >
+                  ✕ Close
+                </button>
+              )}
+            </div>
+          </nav>
+
+          {activeTab === "write" && (
+            <div className="space-y-8">
+              <div className="flex flex-wrap gap-4">
+                <PremiumBadge color="#4ade80" label="Keystroke capture active" />
+                <PremiumBadge
+                  color="#FF6A00"
+                  label={pasteDetected ? "Paste detected!" : "Paste detection on"}
+                  pulse={pasteDetected}
+                />
+                <PremiumBadge color="#4ade80" label={`WPM: ${wpm}`} />
+                <PremiumBadge color="#4ade80" label={`Pauses: ${pauses}`} />
+                <PremiumBadge color="#4ade80" label={`Human-like: ${behaviorScore}%`} />
+                <PremiumBadge color="#FF6A00" label={`Deviation: ${baselineDeviation}%`} />
+              </div>
+
+              <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-3xl shadow-xl overflow-hidden">
+                <div className="flex flex-wrap items-center gap-4 p-6 border-b border-white/10 bg-black/20">
+                  <select
+                    className="px-4 py-2 bg-black/40 border border-white/20 rounded-xl text-white text-sm font-medium focus:outline-none focus:border-[#FF6A00]/50 focus:ring-1 focus:ring-[#FF6A00]/20 transition-all duration-200"
+                    aria-label="Font family"
+                    title="Font family"
+                    value={font}
+                    onChange={(e) => applyFont(e.target.value)}
+                  >
+                    {FONTS.map((f) => (
+                      <option key={f} value={f} className="bg-black text-white">
+                        {f}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="px-3 py-2 bg-black/40 border border-white/20 rounded-xl text-white text-sm font-medium focus:outline-none focus:border-[#FF6A00]/50 focus:ring-1 focus:ring-[#FF6A00]/20 transition-all duration-200 w-20"
+                    aria-label="Font size"
+                    title="Font size"
+                    value={fontSize}
+                    onChange={(e) => applySize(Number(e.target.value))}
+                  >
+                    {FONT_SIZES.map((s) => (
+                      <option key={s} value={s} className="bg-black text-white">
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="w-px h-6 bg-white/20" />
+
+                  <PremiumToolBtn label="B" bold onClick={() => exec("bold")} title="Bold" />
+                  <PremiumToolBtn label="I" italic onClick={() => exec("italic")} title="Italic" />
+                  <PremiumToolBtn label="U" underline onClick={() => exec("underline")} title="Underline" />
+                  <PremiumToolBtn label="S" strike onClick={() => exec("strikeThrough")} title="Strikethrough" />
+
+                  <div className="w-px h-6 bg-white/20" />
+
+                  <PremiumToolBtn label="H1" onClick={() => applyHeading("h1")} title="Heading 1" />
+                  <PremiumToolBtn label="H2" onClick={() => applyHeading("h2")} title="Heading 2" />
+                  <PremiumToolBtn label="H3" onClick={() => applyHeading("h3")} title="Heading 3" />
+                  <PremiumToolBtn label="¶" onClick={() => applyHeading("p")} title="Paragraph" />
+
+                  <div className="w-px h-6 bg-white/20" />
+
+                  <PremiumToolBtn label="≡" onClick={() => exec("justifyLeft")} title="Align Left" />
+                  <PremiumToolBtn label="≡" onClick={() => exec("justifyCenter")} title="Center" centerAlign />
+                  <PremiumToolBtn label="≡" onClick={() => exec("justifyRight")} title="Align Right" />
+                  <PremiumToolBtn label="≡" onClick={() => exec("justifyFull")} title="Justify" />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4 p-6 pt-0 border-b border-white/10 bg-black/20">
+                  <div className="flex gap-3">
+                    <div
+                      className="w-8 h-8 rounded-lg border-2 border-white/20 cursor-pointer transition-all duration-200 hover:scale-105 hover:border-white/40 bg-white"
+                      onClick={() => applyTextColor("#ffffff")}
+                      title="White text"
+                    />
+                    <div
+                      className="w-8 h-8 rounded-lg border-2 border-white/20 cursor-pointer transition-all duration-200 hover:scale-105 hover:border-[#FF6A00]/50 bg-gradient-to-r from-[#FF6A00] to-[#FF8C42]"
+                      onClick={() => applyTextColor("#FF6A00")}
+                      title="Orange text"
+                    />
+                  </div>
+
+                  <div className="w-px h-6 bg-white/20" />
+
+                  <label className="relative cursor-pointer" title="Custom text color">
+                    <input
+                      type="color"
+                      value={customColor}
+                      className="w-8 h-8 rounded-lg border-2 border-white/20 cursor-pointer bg-transparent"
+                      aria-label="Custom text color"
+                      title="Custom text color"
+                      onChange={(e) => {
+                        setCustomColor(e.target.value);
+                        applyTextColor(e.target.value);
+                      }}
+                    />
+                  </label>
+
+                  <label className="relative cursor-pointer" title="Custom highlight color">
+                    <input
+                      type="color"
+                      value={customBg}
+                      className="w-8 h-8 rounded-lg border-2 border-white/20 cursor-pointer bg-transparent"
+                      aria-label="Custom highlight color"
+                      title="Custom highlight color"
+                      onChange={(e) => {
+                        setCustomBg(e.target.value);
+                        applyBgColor(e.target.value);
+                      }}
+                    />
+                  </label>
+
+                  <div className="w-px h-6 bg-white/20" />
+
+                  <PremiumToolBtn label="• —" onClick={() => exec("insertUnorderedList")} title="Bullet List" />
+                  <PremiumToolBtn label="1." onClick={() => exec("insertOrderedList")} title="Numbered List" />
+                  <PremiumToolBtn label="→" onClick={() => exec("indent")} title="Indent" />
+                  <PremiumToolBtn label="←" onClick={() => exec("outdent")} title="Outdent" />
+                  <PremiumToolBtn label="⎌" onClick={() => exec("undo")} title="Undo" />
+                  <PremiumToolBtn label="⎋" onClick={() => exec("redo")} title="Redo" />
+                </div>
+
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  className={`min-h-[500px] p-8 bg-black/20 text-white text-lg leading-relaxed outline-none overflow-y-auto ${fontClass} ${fontSizeClass}`}
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={handleKeyUp}
+                  onInput={handleInput}
+                  onPaste={handlePaste}
+                  spellCheck
+                  style={{
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap'
+                  }}
+                />
+
+                <div className="flex items-center justify-between p-6 border-t border-white/10 bg-black/20">
+                  <div className="flex items-center gap-6">
+                    <PremiumStatItem label="Words:" value={words} tone="muted" />
+                    <PremiumStatItem label="Chars:" value={chars} tone="muted" />
+                    <PremiumStatItem label="Edits:" value={edits} tone="accent" />
+                    <PremiumStatItem label="Pastes:" value={pastes} tone="muted" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-white/40 text-sm">Ctrl+S to save quietly</span>
+                    <button
+                      className="px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#FF6A00] to-[#FF8C42] shadow-md transition-all duration-200 hover:shadow-lg active:scale-95"
+                      onClick={handleSaveSession}
+                    >
+                      Save session
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Sessions Tab */}
-        {activeTab === "sessions" && (
-          <div className={styles.tabContent}>
-            <h2 className={styles.sectionTitle}>
-              Writing Sessions — {fileData.name}
-            </h2>
+          {/* Sessions Ta          {/* Sessions Tab - High Density Wide Design */}
+          {activeTab === "sessions" && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF6A00]/20 to-[#FF8C42]/10 border border-[#FF6A00]/20 flex items-center justify-center shrink-0 shadow-lg shadow-[#FF6A00]/5">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <div>
+                    <h2 className="text-[1.5rem] md:text-[1.75rem] leading-[1.2] font-black text-white tracking-tight">Writing Sessions</h2>
+                    <p className="text-white/65 text-[0.75rem] md:text-[0.8125rem] leading-[1.45] font-semibold uppercase tracking-[0.08em]">Complete history for {fileData.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                   <div className="px-5 py-2.5 rounded-xl border border-white/5 bg-white/[0.02] flex items-center gap-3">
+                      <span className="text-[0.6875rem] text-white/55 font-bold uppercase tracking-[0.08em]">Total Committed</span>
+                      <span className="text-[1.125rem] md:text-[1.25rem] leading-none font-black text-white">{fileData.sessions.length}</span>
+                   </div>
+                </div>
+              </div>
 
-            {fileData.sessions.length === 0 ? (
-              <p className={styles.emptyMsg}>
-                No sessions saved yet. Write something and click "Save session".
-              </p>
-            ) : (
-              <div className={styles.sessionList}>
-                {[...fileData.sessions].reverse().map((session, index) => {
-                  const verificationSessionId = session._id || session.id;
-
-                  return (
-                    <div key={session._id || session.id} className={styles.sessionCard}>
-                      <div className={styles.sessionHeader}>
-                        <h3 className={styles.sessionNum}>
-                          Session #{fileData.sessions.length - index}
-                        </h3>
-                        <p className={styles.sessionDate}>
-                          {session.createdAt
-                            ? new Date(session.createdAt).toLocaleString()
-                            : new Date(session.timestamp).toLocaleString()}
-                        </p>
+              {fileData.sessions.length === 0 ? (
+                <div className="py-32 rounded-[2.5rem] border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center mb-6 text-3xl opacity-20">📜</div>
+                  <h3 className="text-white/75 text-[1.0625rem] md:text-[1.125rem] leading-[1.35] font-bold">No sessions committed to the ledger yet.</h3>
+                  <p className="text-white/55 text-[0.9rem] leading-[1.55] mt-1">Start writing to capture behavioral biometrics.</p>
+                </div>
+              ) : (
+                <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-[#0D0D0D]/50 backdrop-blur-xl shadow-2xl">
+                  {/* Grid Layout Container */}
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[1200px]">
+                      {/* Header Row */}
+                      <div className="grid grid-cols-[80px,2fr,1fr,1fr,1fr,1fr,1fr,1fr,140px] items-center px-10 py-6 bg-white/[0.03] border-b border-white/5">
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em]">Ref</span>
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em]">Session Timeline</span>
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em] text-right">Words</span>
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em] text-right">Chars</span>
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em] text-right">Duration</span>
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em] text-right">Edits</span>
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em] text-right">Velocity</span>
+                        <span className="text-[0.6875rem] text-white/60 font-bold uppercase tracking-[0.08em] text-right">Authenticity</span>
+                        <span className="text-right"></span>
                       </div>
 
-                      <div className={styles.sessionStats}>
-                        <div className={styles.sessionStat}>
-                          <p className={`${styles.sessionStatVal} ${styles.textDefault}`}>
-                            {session.words}
-                          </p>
-                          <span className={styles.sessionStatLabel}>WORDS</span>
-                        </div>
+                      <div className="divide-y divide-white/[0.02]">
+                        {[...fileData.sessions].reverse().map((session, index) => {
+                          const verificationSessionId = session._id || session.id;
+                          const sessionRef = fileData.sessions.length - index;
+                          const score = session.analytics?.authenticity?.score;
+                          const label = session.analytics?.authenticity?.label;
+                          
+                          const scoreColor = typeof score === 'number' 
+                            ? score > 70 ? 'text-emerald-400' : score > 40 ? 'text-amber-400' : 'text-red-400'
+                            : 'text-white/20';
 
-                        <div className={styles.sessionStat}>
-                          <p className={`${styles.sessionStatVal} ${styles.textDefault}`}>
-                            {session.chars}
-                          </p>
-                          <span className={styles.sessionStatLabel}>CHARS</span>
-                        </div>
+                          return (
+                            <div
+                              key={session._id || session.id || index}
+                              className="grid grid-cols-[80px,2fr,1fr,1fr,1fr,1fr,1fr,1fr,140px] items-center px-10 py-7 hover:bg-white/[0.02] transition-all duration-300 group relative"
+                            >
+                              {/* Left margin highlight */}
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF6A00] opacity-0 group-hover:opacity-100 transition-opacity" />
+                              
+                              <span className="text-[0.75rem] leading-none font-bold text-[#FF6A00]/70 tracking-[0.02em]">#{sessionRef.toString().padStart(3, '0')}</span>
+                              
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[0.95rem] md:text-[1rem] leading-[1.35] font-semibold text-white group-hover:text-[#FF6A00] transition-colors">{new Date(session.timestamp).toLocaleDateString(undefined, { dateStyle: 'full' })}</span>
+                                <span className="text-[0.6875rem] text-white/60 font-semibold uppercase tracking-[0.06em] leading-[1.35]">At {new Date(session.timestamp).toLocaleTimeString(undefined, { timeStyle: 'short' })}</span>
+                              </div>
 
-                        <div className={styles.sessionStat}>
-                          <p className={`${styles.sessionStatVal} ${styles.textDefault}`}>
-                            {session.edits}
-                          </p>
-                          <span className={styles.sessionStatLabel}>EDITS</span>
-                        </div>
+                              <span className="text-[0.95rem] font-bold text-white text-right tracking-tight">{session.words.toLocaleString()}</span>
+                              <span className="text-[0.95rem] font-semibold text-white/75 text-right tracking-tight">{session.chars.toLocaleString()} <span className="text-[0.625rem] opacity-70">ch</span></span>
+                              <span className="text-[0.95rem] font-semibold text-white/75 text-right tracking-tight">{session.duration}s</span>
+                              <span className="text-[0.95rem] font-semibold text-amber-400/85 text-right tracking-tight">{session.edits || 0}</span>
+                              
+                              <div className="text-right">
+                                <span className="text-[0.95rem] font-bold text-white tracking-tight">{session.wpm}</span>
+                                <span className="text-[0.625rem] text-[#FF8C42] font-semibold uppercase ml-1 tracking-[0.06em] opacity-90">wpm</span>
+                              </div>
 
-                        <div className={styles.sessionStat}>
-                          <p className={`${styles.sessionStatVal} ${styles.textDefault}`}>
-                            {session.pastes}
-                          </p>
-                          <span className={styles.sessionStatLabel}>PASTES</span>
-                        </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className={`text-[0.95rem] font-bold leading-none ${scoreColor}`}>{typeof score === 'number' ? `${score}%` : '—'}</span>
+                                {label && <span className={`text-[0.625rem] font-semibold uppercase tracking-[0.06em] opacity-70 px-1.5 py-0.5 rounded border border-current leading-[1.2] ${scoreColor}`}>{label}</span>}
+                              </div>
 
-                        <div className={styles.sessionStat}>
-                          <p className={`${styles.sessionStatVal} ${styles.textAccent}`}>
-                            {session.wpm}
-                          </p>
-                          <span className={styles.sessionStatLabel}>WPM</span>
-                        </div>
-
-                        <div className={styles.sessionStat}>
-                          <p className={`${styles.sessionStatVal} ${styles.textDefault}`}>
-                            {typeof session.duration === "string"
-                              ? session.duration
-                              : `${Math.floor(session.duration / 60)}m ${session.duration % 60}s`}
-                          </p>
-                          <span className={styles.sessionStatLabel}>DURATION</span>
-                        </div>
-                      </div>
-
-                      <div className={styles.sessionActions}>
-                        <button
-                          type="button"
-                          disabled={!isMongoObjectId(verificationSessionId)}
-                          onClick={() => {
-                            if (!isMongoObjectId(verificationSessionId)) return;
-                            navigate(`/verify/${verificationSessionId}`);
-                          }}
-                          className={
-                            isMongoObjectId(verificationSessionId)
-                              ? styles.analysisButton
-                              : `${styles.analysisButton} ${styles.analysisButtonDisabled}`
-                          }
-                        >
-                          📊 View Analysis
-                        </button>
+                              <div className="flex justify-end">
+                                <button
+                                  type="button"
+                                  disabled={!isMongoObjectId(verificationSessionId)}
+                                  onClick={() => {
+                                    if (!isMongoObjectId(verificationSessionId)) return;
+                                    navigate(`/verify/${verificationSessionId}`);
+                                  }}
+                                  className="px-5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-[0.625rem] font-semibold text-white uppercase tracking-[0.08em] leading-none hover:bg-gradient-to-r hover:from-[#FF6A00] hover:to-[#FF8C42] hover:border-transparent hover:shadow-lg hover:shadow-[#FF6A00]/20 transition-all active:scale-95 disabled:hidden"
+                                >
+                                  Deep Analysis
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Overview Tab */}
-        {activeTab === "overview" && (
-          <div className={styles.tabContent}>
-            <h2 className={styles.sectionTitle}>Overview — {fileData.name}</h2>
-
-            {/* STEP 8: Display Authenticity Data */}
-            {sessionAnalytics?.authenticity && (
-              <div className="mb-8 p-6 bg-white/5 rounded-lg">
-                <h2 className="text-2xl mb-4 text-amber-500">Authenticity Score</h2>
-                <p className="text-3xl font-bold my-2">
-                  {sessionAnalytics.authenticity.score} / 100
-                </p>
-                <p className="text-xl text-green-400 mb-4">
-                  {sessionAnalytics.authenticity.label}
-                </p>
-
-                {sessionAnalytics.flags && sessionAnalytics.flags.length > 0 && (
-                  <div className="mt-4">
-                    {sessionAnalytics.flags.map((f: any, idx: number) => (
-                      <div key={idx} className="text-red-500 py-2 text-sm">
-                        ⚠ {f.message}
-                      </div>
-                    ))}
                   </div>
-                )}
-              </div>
-            )}
-
-            <div className={styles.overviewGrid}>
-              <OverviewCard
-                label="Total Sessions"
-                value={totalSessions}
-                icon="📝"
-              />
-              <OverviewCard label="Total Words" value={totalWords} icon="📖" />
-              <OverviewCard label="Avg WPM" value={avgWpm} icon="⚡" accent />
-              <OverviewCard
-                label="Total Write Time"
-                value={`${Math.floor(totalDuration / 60)}m ${totalDuration % 60}s`}
-                icon="⏱️"
-              />
-              <OverviewCard
-                label="Last Modified"
-                value={new Date(fileData.lastModified).toLocaleDateString()}
-                icon="📅"
-              />
-              <OverviewCard label="File Name" value={fileName} icon="📄" />
-            </div>
-
-            {fileData.sessions.length > 1 && (
-              <>
-                <h3 className={styles.sectionTitleSmall}>WPM Over Sessions</h3>
-                <div className={styles.chart}>
-                  <WpmChart sessions={fileData.sessions} />
                 </div>
-              </>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6A00]/20 to-[#FF8C42]/10 border border-[#FF6A00]/20 flex items-center justify-center shrink-0">
+                  <span className="text-xl">📄</span>
+                </div>
+                <div>
+                  <h2 className="text-[1.45rem] md:text-[1.65rem] leading-[1.2] font-bold text-white tracking-tight">Document Overview</h2>
+                  <p className="text-white/65 text-[0.9rem] md:text-[0.95rem] leading-[1.5] font-medium">{fileData.name}</p>
+                </div>
+              </div>
+
+              {sessionAnalytics?.authenticity && (
+                <div className="flex items-center gap-8 py-6 border-b border-white/[0.05] mb-8">
+                  <div className="flex items-baseline gap-3 shrink-0">
+                    <span className="text-[0.6875rem] uppercase tracking-[0.08em] text-white/60 font-bold shrink-0">Authenticity</span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[1.7rem] md:text-[1.9rem] font-black text-white leading-none">{sessionAnalytics.authenticity.score}</span>
+                      <span className="text-white/55 text-[0.75rem] font-semibold tracking-tight">/ 100</span>
+                    </div>
+                  </div>
+                  <div className="h-4 w-px bg-white/5" />
+                  <span className="text-[0.8125rem] font-semibold text-green-300/90 uppercase tracking-[0.06em]">{sessionAnalytics.authenticity.label}</span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500/40 animate-pulse" />
+                    <span className="text-[0.6875rem] text-white/55 font-semibold uppercase tracking-[0.06em]">Verified Sync</span>
+                  </div>
+                </div>
+              )}
+
+              <OverviewAnalyticsHero
+                avgWpm={avgWpm}
+                totalWords={totalWords}
+                totalSessions={totalSessions}
+                totalDuration={totalDuration}
+                sessions={fileData.sessions}
+                fileName={fileData.name}
+                lastModified={fileData.lastModified}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {toastMessage && (
@@ -1259,6 +1194,189 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   );
 }
 
+function PremiumBadge({
+  color,
+  label,
+  pulse,
+}: {
+  color: string;
+  label: string;
+  pulse?: boolean;
+}) {
+  const dotColor = color === "#FF6A00" ? "bg-gradient-to-r from-[#FF6A00] to-[#FF8C42]" : "bg-green-400";
+  const pulseClass = pulse ? "animate-pulse" : "";
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-black/20 backdrop-blur-sm border border-white/10 transition-all duration-200 hover:border-white/20">
+      <div className={`w-2 h-2 rounded-full ${dotColor} ${pulseClass} shadow-sm`} />
+      <span className="text-white/90 text-sm font-medium font-mono tracking-wide">{label}</span>
+    </div>
+  );
+}
+
+function PremiumToolBtn({
+  label,
+  onClick,
+  bold,
+  italic,
+  underline,
+  strike,
+  title,
+  centerAlign,
+}: {
+  label: string;
+  onClick: () => void;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strike?: boolean;
+  title?: string;
+  centerAlign?: boolean;
+}) {
+  const className = [
+    "px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white/80 hover:text-white hover:bg-white/10 hover:border-white/30 transition-all duration-200 text-sm font-medium min-w-[36px] h-9 flex items-center justify-center",
+    bold ? "font-bold" : "",
+    italic ? "italic" : "",
+    underline ? "underline" : "",
+    strike ? "line-through" : "",
+    centerAlign ? "tracking-wider" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <button className={className} onClick={onClick} title={title}>
+      {label}
+    </button>
+  );
+}
+
+function PremiumStatItem({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number | string;
+  tone: "muted" | "accent";
+}) {
+  const toneClass = tone === "accent" ? "text-[#FF6A00]" : "text-white/60";
+  return (
+    <span className="text-sm">
+      <span className="text-white/60">{label}</span>{" "}
+      <strong className={`font-mono ${toneClass}`}>{value}</strong>
+    </span>
+  );
+}
+
+function PremiumSessionStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="text-center">
+      <div className={`text-2xl font-bold mb-1 ${accent ? "text-[#FF6A00]" : "text-white"}`}>
+        {value}
+      </div>
+      <div className="text-xs text-white/50 uppercase tracking-wider font-bold">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function PremiumOverviewCard({
+  label,
+  value,
+  icon,
+  accent,
+  progressRingValue,
+}: {
+  label: string;
+  value: number | string;
+  icon: string;
+  accent?: boolean;
+  progressRingValue?: number;
+}) {
+  const showProgressRing = label === "Avg WPM" && typeof progressRingValue === "number";
+
+  return (
+    <div className="p-6 rounded-2xl bg-black/30 backdrop-blur-sm border border-white/10 shadow-xl transition-all duration-200 hover:border-[#FF6A00]/20 hover:shadow-lg hover:-translate-y-1">
+      <div className="text-center space-y-4">
+        <div className="text-3xl">{icon}</div>
+        <div className="flex items-center justify-center gap-3">
+          <div className={`text-2xl font-bold ${accent ? "text-[#FF6A00]" : "text-white"}`}>
+            {value}
+          </div>
+          {showProgressRing && (
+            <SubtleProgressRing value={progressRingValue} max={120} />
+          )}
+        </div>
+        <div className="text-sm text-white/60 uppercase tracking-wider font-bold">
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SubtleProgressRing({ value, max }: { value: number; max: number }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 10);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const size = 34;
+  const strokeWidth = 3;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const normalized = Math.max(0, Math.min(value / max, 1));
+  const dashOffset = circumference * (1 - normalized);
+
+  return (
+    <div
+      className="opacity-0 translate-y-1"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(4px)",
+        transition: "opacity 520ms ease, transform 520ms ease",
+      }}
+      aria-hidden="true"
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.12)"
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255, 140, 66, 0.65)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          strokeDasharray={circumference}
+          strokeDashoffset={isVisible ? dashOffset : circumference}
+          style={{ transition: "stroke-dashoffset 520ms ease" }}
+        />
+      </svg>
+    </div>
+  );
+}
+
 function Badge({
   color,
   label,
@@ -1268,14 +1386,7 @@ function Badge({
   label: string;
   pulse?: boolean;
 }) {
-  const dotToneClass = color === "#f59e0b" ? styles.dotAmber : styles.dotGreen;
-  const pulseClass = pulse ? styles.dotPulse : "";
-  return (
-    <div className={styles.badge}>
-      <span className={`${styles.dot} ${dotToneClass} ${pulseClass}`} />
-      <span className={styles.badgeLabel}>{label}</span>
-    </div>
-  );
+  return <PremiumBadge color={color} label={label} pulse={pulse} />;
 }
 
 function ToolBtn({
@@ -1297,21 +1408,17 @@ function ToolBtn({
   title?: string;
   centerAlign?: boolean;
 }) {
-  const className = [
-    styles.toolBtn,
-    bold ? styles.toolBtnBold : "",
-    italic ? styles.toolBtnItalic : "",
-    underline ? styles.toolBtnUnderline : "",
-    strike ? styles.toolBtnStrike : "",
-    centerAlign ? styles.toolBtnCenter : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <button className={className} onClick={onClick} title={title}>
-      {label}
-    </button>
+    <PremiumToolBtn
+      label={label}
+      onClick={onClick}
+      bold={bold}
+      italic={italic}
+      underline={underline}
+      strike={strike}
+      title={title}
+      centerAlign={centerAlign}
+    />
   );
 }
 
@@ -1324,13 +1431,7 @@ function StatItem({
   value: number | string;
   tone: "muted" | "accent";
 }) {
-  const toneClass =
-    tone === "accent" ? styles.statItemAccent : styles.statItemMuted;
-  return (
-    <span className={`${styles.statItem} ${toneClass}`}>
-      {label} <strong className={styles.statItemValue}>{value}</strong>
-    </span>
-  );
+  return <PremiumStatItem label={label} value={value} tone={tone} />;
 }
 
 function OverviewCard({
@@ -1344,50 +1445,7 @@ function OverviewCard({
   icon: string;
   accent?: boolean;
 }) {
-  return (
-    <div className={styles.overviewCard}>
-      <div className={styles.overviewIcon}>{icon}</div>
-      <div
-        className={`${styles.overviewValue} ${accent ? styles.textAccent : styles.textDefault}`}
-      >
-        {value}
-      </div>
-      <div className={styles.overviewLabel}>{label}</div>
-    </div>
-  );
-}
-
-function WpmChart({ sessions }: { sessions: Session[] }) {
-  const max = Math.max(...sessions.map((s) => s.wpm), 1);
-  return (
-    <>
-      {sessions.map((s, i) => {
-        const barHeight = Math.max(4, Math.round((s.wpm / max) * 100));
-        const y = 100 - barHeight;
-        return (
-          <div key={s.id} className={styles.chartBarWrap}>
-            <svg
-              className={styles.chartSvg}
-              viewBox="0 0 32 100"
-              role="img"
-              aria-label={`Session ${i + 1}: ${s.wpm} WPM`}
-            >
-              <rect
-                x="0"
-                y={y}
-                width="32"
-                height={barHeight}
-                className={styles.chartBarRect}
-                rx="4"
-                ry="4"
-              />
-            </svg>
-            <span className={styles.chartLabel}>{i + 1}</span>
-          </div>
-        );
-      })}
-    </>
-  );
+  return <PremiumOverviewCard label={label} value={value} icon={icon} accent={accent} />;
 }
 
 export default function FileOpen() {
@@ -1397,16 +1455,24 @@ export default function FileOpen() {
 
   if (!fileId || !fileName) {
     return (
-      <div className={styles.root}>
-        <div className={styles.nav}>
-          <div className={styles.navTabs} />
+      <div className="file-open-page min-h-screen bg-[#0B0B0B] relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-gradient-to-r from-[#FF6A00] to-[#FF8C42] opacity-[0.025] blur-[80px] rounded-full" />
+          <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-gradient-to-l from-[#FF8C42] to-[#FFB366] opacity-[0.015] blur-[60px] rounded-full" />
         </div>
-        <div className={styles.divider} />
-        <div className={styles.tabContent}>
-          <h2 className={styles.sectionTitle}>Error</h2>
-          <p className={styles.emptyMsg}>
-            No file specified. Please select a file from the files list.
-          </p>
+
+        <div className="relative z-10 min-h-screen flex items-center justify-center">
+          <div className="max-w-md mx-auto px-6">
+            <div className="text-center p-8 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">Error</h2>
+              <p className="text-white/60">
+                No file specified. Please select a file from the files list.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );

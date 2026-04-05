@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
-import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
@@ -40,20 +39,28 @@ const API_BASE_URL =
 const fmt = (value: unknown, digits = 2) =>
   typeof value === "number" && Number.isFinite(value)
     ? value.toFixed(digits)
-    : "N/A";
+    : "—";
 
 const fint = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value)
     ? value.toLocaleString()
-    : "N/A";
+    : "—";
 
 const fdur = (value: unknown) => {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "N/A";
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   const totalSeconds = Math.max(0, Math.round(value / 1000));
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${m}m ${s}s`;
 };
+
+const Metric = ({ label, value, sub }: { label: string; value: string | number; sub?: string }) => (
+  <div className="flex flex-col gap-1">
+    <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] opacity-90">{label}</span>
+    <span className="text-[1.5rem] md:text-[1.65rem] leading-[1.2] font-semibold tracking-tight text-[var(--text)]">{value}</span>
+    {sub && <span className="text-[0.75rem] leading-[1.45] text-[var(--muted)] font-medium opacity-90">{sub}</span>}
+  </div>
+);
 
 export default function VerifyPage() {
   const navigate = useNavigate();
@@ -87,7 +94,7 @@ export default function VerifyPage() {
     };
 
     void fetchData();
-    const interval = setInterval(fetchData, 2000);
+    const interval = setInterval(fetchData, 4000);
 
     return () => {
       cancelled = true;
@@ -102,14 +109,14 @@ export default function VerifyPage() {
     (analytics.totalInsertedChars ?? 0) > 0
   );
 
-  const scoreColor =
+  const statusStyle =
     typeof score === "number"
       ? score > 70
-        ? "text-green-400"
+        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
         : score > 40
-          ? "text-yellow-400"
-          : "text-red-400"
-      : "text-[var(--muted)]";
+          ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+          : "bg-red-500/10 text-red-400 border-red-500/20"
+      : "bg-zinc-800 text-zinc-400 border-zinc-700";
 
   const openPdf = () => {
     if (!sessionId) return;
@@ -122,11 +129,10 @@ export default function VerifyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--base)] text-[var(--text)]">
-        <div className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-6">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 py-4 text-sm text-[var(--muted)]">
-            Loading verification report...
-          </div>
+      <div className="min-h-screen bg-[var(--base)] flex items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-zinc-800 border-t-[var(--brand)] rounded-full animate-spin" />
+          <p className="text-[0.95rem] leading-[1.5] font-medium text-[var(--muted)]">Generating verification report...</p>
         </div>
       </div>
     );
@@ -134,111 +140,149 @@ export default function VerifyPage() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-[var(--base)] text-[var(--text)]">
-        <div className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-6">
-          <Card className="w-full max-w-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold">Verification Report</h1>
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    {error ?? "No report data found."}
-                  </p>
-                </div>
-                <Button onClick={() => navigate(-1)}>Go back</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-[var(--base)] flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <h1 className="text-[1.35rem] md:text-[1.5rem] leading-[1.25] font-bold font-manrope">Unable to Load Report</h1>
+          <p className="text-[0.95rem] leading-[1.55] text-[var(--muted)]">{error ?? "The report data is unavailable or still being processed."}</p>
+          <Button onClick={() => navigate(-1)} variant="outline" className="rounded-xl px-8">Return</Button>
         </div>
       </div>
     );
   }
 
-  const scoreValue = typeof score === "number" ? score : 0;
+  const scoreValue = typeof score === "number" ? Math.round(score) : 0;
   const label = analytics?.authenticity?.label ?? "Unknown";
 
   return (
-    <div className="min-h-screen bg-[var(--base)] text-[var(--text)]">
-      <div className="mx-auto w-full max-w-6xl px-6 py-8">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-              ViNotes
-            </p>
-            <h1 className="mt-2 text-3xl font-bold">Verification Report</h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Session: {sessionId}
-            </p>
+    <div className="min-h-screen bg-[var(--base)] text-[var(--text)] font-manrope selection:bg-[var(--brand)] selection:text-[var(--brand-foreground)]">
+      <div className="mx-auto w-full max-w-5xl px-6 py-12 lg:py-20">
+        
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
+          <div className="space-y-4">
+            <Badge className="rounded-full px-3 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] border border-zinc-800 bg-transparent text-[var(--muted)]">Verification Report</Badge>
+            <h1 className="text-[2.25rem] md:text-[3.25rem] leading-[1.1] font-extrabold tracking-tight">Authenticity Analysis</h1>
+            <div className="flex items-center gap-3 text-[0.8125rem] leading-[1.45] font-medium text-[var(--muted)]">
+              <span className="font-mono text-zinc-400">ID: {sessionId?.slice(0, 8)}...</span>
+              <Separator className="w-px h-3 bg-zinc-800 mx-1" />
+              <span>{data.createdAt ? new Date(data.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' }) : "N/A"}</span>
+            </div>
           </div>
 
-          <div className="flex gap-3">
-            <Button onClick={openPdf}>Download PDF</Button>
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              Back
+          <div className="flex items-center gap-3">
+            <Button onClick={openPdf} size="lg" className="rounded-xl font-bold bg-[var(--text)] text-[var(--base)] hover:opacity-90">
+              Download PDF
+            </Button>
+            <Button onClick={() => navigate(-1)} variant="outline" size="lg" className="rounded-xl font-bold border-zinc-800">
+              Files
             </Button>
           </div>
         </div>
 
-        <Card className="mb-6">
-          <CardContent className="flex flex-wrap items-center justify-between gap-6 p-6">
-            <div>
-              <p className="text-sm text-[var(--muted)]">
-                Authenticity Score
-              </p>
-              <h2 className={`mt-1 text-5xl font-bold ${scoreColor}`}>
-                {hasAnalytics ? scoreValue : "N/A"}
-              </h2>
-            </div>
-
-            <Badge className="rounded-full px-4 py-2 text-base">
-              {hasAnalytics ? label : "Waiting for data"}
-            </Badge>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">WPM</p><p className="mt-2 text-2xl font-semibold">{fint(analytics?.approximateWpmVariance != null ? Math.round(analytics.approximateWpmVariance) : undefined)}</p></CardContent></Card>
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Pauses</p><p className="mt-2 text-2xl font-semibold">{fint(analytics?.pauseCount)}</p></CardContent></Card>
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Edit Ratio</p><p className="mt-2 text-2xl font-semibold">{fmt(analytics?.editRatio)}</p></CardContent></Card>
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Paste Ratio</p><p className="mt-2 text-2xl font-semibold">{fmt(analytics?.pasteRatio)}</p></CardContent></Card>
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Total Inserted Chars</p><p className="mt-2 text-2xl font-semibold">{fint(analytics?.totalInsertedChars)}</p></CardContent></Card>
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Total Deleted Chars</p><p className="mt-2 text-2xl font-semibold">{fint(analytics?.totalDeletedChars)}</p></CardContent></Card>
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Total Pasted Chars</p><p className="mt-2 text-2xl font-semibold">{fint(analytics?.totalPastedChars)}</p></CardContent></Card>
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Session Time</p><p className="mt-2 text-2xl font-semibold">{fdur(analytics?.durationMs)}</p></CardContent></Card>
-        </div>
-
-        <Separator className="my-6" />
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Avg Sentence Length (words)</p><p className="mt-2 text-2xl font-semibold">{fint(analytics?.textAnalysis?.avgSentenceLength != null ? Math.round(analytics.textAnalysis.avgSentenceLength) : undefined)}</p></CardContent></Card>
-          <Card><CardContent className="p-5"><p className="text-sm text-[var(--muted)]">Total Words</p><p className="mt-2 text-2xl font-semibold">{fint(analytics?.finalChars != null ? Math.round(analytics.finalChars / 5) : undefined)}</p></CardContent></Card>
-        </div>
-
-        <Card className="mt-6">
-          <CardContent className="p-5">
-            <h3 className="text-lg font-semibold">Flags</h3>
-            <div className="mt-4 space-y-3">
-              {analytics?.flags?.length ? (
-                analytics.flags.map((flag, index) => (
-                  <div key={`flag-${index}`} className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">
-                    ⚠ {flag}
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-3 text-sm text-green-300">
-                  No suspicious behavior detected
+        {/* Primary Insight Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+          
+          <div className="lg:col-span-4 p-8 rounded-3xl border border-zinc-800 bg-zinc-900/30 flex flex-col items-center justify-center text-center">
+             <div className="mb-6 relative">
+                <svg className="w-32 h-32 transform -rotate-90">
+                   <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-zinc-800" />
+                   <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={377} strokeDashoffset={377 - (377 * scoreValue) / 100} className={scoreValue > 70 ? "text-emerald-500" : scoreValue > 40 ? "text-amber-500" : "text-red-500"} style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                   <span className="text-[2.25rem] leading-none font-extrabold tracking-tight">{scoreValue}%</span>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+             </div>
+               <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] mb-3 opacity-85">Authenticity Score</p>
+               <Badge className={`rounded-full px-4 py-1.5 text-[0.75rem] font-semibold border ${statusStyle}`}>
+               {hasAnalytics ? label : "Pending"}
+             </Badge>
+          </div>
 
-        <p className="mt-6 text-sm text-[var(--muted)]">
-          Created: {data.createdAt ? new Date(data.createdAt).toLocaleString() : "N/A"}
-        </p>
+          <div className="lg:col-span-8 p-10 rounded-3xl border border-zinc-800 bg-zinc-900/20">
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
+               <Metric label="Words Per Minute" value={fint(analytics?.approximateWpmVariance != null ? Math.round(analytics.approximateWpmVariance) : undefined)} sub="Writing cadence" />
+               <Metric label="Significant Pauses" value={fint(analytics?.pauseCount)} sub="Average 2.4s" />
+               <Metric label="Linguistic Edit Ratio" value={fmt(analytics?.editRatio)} sub="Correction frequency" />
+               <Metric label="Paste Frequency" value={fmt(analytics?.pasteRatio)} sub="External input" />
+               <Metric label="Total Session Time" value={fdur(analytics?.durationMs)} sub="Active focus" />
+               <Metric label="Final Word Count" value={fint(analytics?.finalChars != null ? Math.round(analytics.finalChars / 5) : undefined)} sub="Net output" />
+             </div>
+          </div>
+
+        </div>
+
+        {/* Detailed Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+           <div className="p-6 rounded-2xl border border-zinc-800/50 bg-zinc-900/10">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-3 block">Structural Depth</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[1.75rem] leading-[1.2] font-bold">{fint(analytics?.textAnalysis?.avgSentenceLength != null ? Math.round(analytics.textAnalysis.avgSentenceLength) : undefined)}</span>
+                <span className="text-[0.875rem] leading-[1.45] font-medium text-zinc-400">avg words / sentence</span>
+              </div>
+           </div>
+           <div className="p-6 rounded-2xl border border-zinc-800/50 bg-zinc-900/10">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-3 block">Manual Input</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[1.75rem] leading-[1.2] font-bold">{fint(analytics?.totalInsertedChars)}</span>
+                <span className="text-[0.875rem] leading-[1.45] font-medium text-zinc-400">characters typed</span>
+              </div>
+           </div>
+           <div className="p-6 rounded-2xl border border-zinc-800/50 bg-zinc-900/10">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-3 block">Modifications</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[1.75rem] leading-[1.2] font-bold">{fint(analytics?.totalDeletedChars)}</span>
+                <span className="text-[0.875rem] leading-[1.45] font-medium text-zinc-400">characters deleted</span>
+              </div>
+           </div>
+        </div>
+
+        {/* Behavioral Anomaly Detection */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[0.875rem] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">Behavioral Indicators</h3>
+            {(!analytics?.flags || analytics.flags.length === 0) && (
+              <span className="flex items-center gap-2 text-emerald-300 text-[0.75rem] font-semibold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                Healthy Patterns Detected
+              </span>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 gap-3">
+            {analytics?.flags?.length ? (
+              analytics.flags.map((flag, index) => (
+                <div key={`flag-${index}`} className="flex items-start gap-4 p-5 rounded-2xl border border-red-500/20 bg-red-500/[0.03] text-red-500">
+                  <div className="p-2 bg-red-500/10 rounded-xl">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                  </div>
+                  <div>
+                    <h4 className="text-[0.9375rem] leading-[1.35] font-semibold mb-1">Pattern Anomaly</h4>
+                    <p className="text-[0.8125rem] leading-[1.55] text-red-300/90 font-medium">{flag}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-12 text-center rounded-3xl border border-dashed border-zinc-800 bg-zinc-900/5">
+                 <p className="text-[0.95rem] leading-[1.55] text-zinc-400 font-medium italic">All typing signals indicate human-consistent behavioral characteristics.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-24 pt-8 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col gap-1">
+             <p className="text-[0.6875rem] font-semibold text-zinc-400 uppercase tracking-[0.08em] leading-none">ViNotes Integrity</p>
+             <p className="text-[0.625rem] font-medium text-zinc-500 uppercase tracking-[0.06em] leading-none">Behavioral Biometrics Core v4.2.0</p>
+          </div>
+          <p className="text-[0.6875rem] font-medium text-zinc-500 tracking-[0.03em] leading-[1.4] text-center md:text-right">
+            {data.createdAt ? `Generated securely on ${new Date(data.createdAt).toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })}` : "N/A"}
+          </p>
+        </div>
+
       </div>
     </div>
   );

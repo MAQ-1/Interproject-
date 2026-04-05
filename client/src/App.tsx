@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import type { AccessTokenResponse } from "@shared/auth";
 import { api, getAccessToken, setAccessToken, clearAuthSession } from "./api";
 import Navbar from "./components/Navbar";
@@ -15,6 +15,7 @@ import LandingPage from "./pages/LandingPage";
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     const saved = localStorage.getItem("theme") as "dark" | "light" | null;
     if (saved) return saved;
@@ -100,7 +101,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      {!isBootstrappingAuth && isAuth && (
+      {!isBootstrappingAuth && isAuth && location.pathname !== "/" && (
         <Navbar
           isAuthenticated={isAuth}
           isLightMode={theme === "light"}
