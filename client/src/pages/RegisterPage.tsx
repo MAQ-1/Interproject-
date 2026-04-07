@@ -24,6 +24,7 @@ const RegisterPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Create account, then redirect to login with a success flag.
       await api.post("/api/auth/register", {
         email,
         password,
@@ -31,6 +32,7 @@ const RegisterPage = () => {
 
       navigate("/login?registered=1", { replace: true });
     } catch (err: unknown) {
+      // Prefer backend validation message; fallback to connectivity guidance.
       let message = "Something went wrong";
 
       if (axios.isAxiosError(err)) {

@@ -1,7 +1,6 @@
 import {
   Files,
   LogOut,
-  Mail,
   Moon,
   NotebookPen,
   Sun,

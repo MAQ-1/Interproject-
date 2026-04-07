@@ -1,6 +1,8 @@
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import DotGrid from "../components/CinematicBackground";
-import Spline from "@splinetool/react-spline";
+
+const Spline = lazy(() => import("@splinetool/react-spline"));
 
 export default function LandingPage() {
   return (
@@ -8,17 +10,7 @@ export default function LandingPage() {
 
       {/* ── DOT GRID BACKGROUND ── */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-        <DotGrid
-          
-          gap={15}
-          baseColor="#271E37"
-          activeColor="#5227FF"
-          proximity={120}
-          shockRadius={250}
-          shockStrength={5}
-          resistance={750}
-          returnDuration={1.5}
-        />
+        <DotGrid />
       </div>
 
       {/* All content above background */}
@@ -100,7 +92,9 @@ export default function LandingPage() {
           {/* Hero Spline 3D */}
           <div className="relative z-10 w-full max-w-5xl mx-auto mt-16 rounded-2xl overflow-hidden border border-white/[0.07]"
             style={{ height: "500px", background: "rgba(0,0,0,0.4)" }}>
-            <Spline scene="https://prod.spline.design/L2HbzZrv2gej8CgF/scene.splinecode" />
+            <Suspense fallback={<div className="w-full h-full" aria-hidden="true" />}>
+              <Spline scene="https://prod.spline.design/L2HbzZrv2gej8CgF/scene.splinecode" />
+            </Suspense>
           </div>
         </section>
 
@@ -141,7 +135,7 @@ export default function LandingPage() {
                 style={{ background: "rgba(255,255,255,0.03)" }}>
                 <div className="p-6 space-y-3">
                   <div className="text-xs text-white/30 uppercase tracking-widest font-semibold mb-4">Keystroke Timeline</div>
-                  {[90,60,80,45,95,70,55,85].map((h, i) => (
+                  {[90,60,80,45,95,70,55,85].map((_, i) => (
                     <div key={i} className="flex items-end gap-1 h-16">
                       {Array.from({length: 20}).map((_, j) => (
                         <div key={j} className="flex-1 rounded-sm transition-all"

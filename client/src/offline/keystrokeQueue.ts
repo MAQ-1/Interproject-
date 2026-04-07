@@ -17,11 +17,10 @@ type StoredKeystrokeRecord = {
   event: Keystroke;
 };
 
-// This durable queue is intentionally separate from the in-memory SessionContext buffer.
-// IndexedDB protects against refresh/crash/offline restarts, while memory keeps a small
-// active working set for sync operations. Their caps are independent safeguards.
+
 const openDb = () => {
   if (openDbPromise) {
+    // Reuse the same open handle flow across all callers.
     return openDbPromise;
   }
 
@@ -62,6 +61,7 @@ const withStore = async <T>(
   const db = await openDb();
 
   return new Promise<T>((resolve, reject) => {
+    // Centralized transaction lifecycle handling for all queue operations.
     const transaction = db.transaction(STORE_NAME, mode);
     const store = transaction.objectStore(STORE_NAME);
 
@@ -116,6 +116,7 @@ const requestToPromise = <T>(request: IDBRequest<T>) =>
 const readOldestKeys = async (limit: number) => {
   return withStore("readonly", async (store) => {
     const keys: number[] = [];
+    // Natural cursor order on auto-increment keys gives FIFO behavior.
     const request = store.openCursor();
 
     await new Promise<void>((resolve, reject) => {
@@ -159,6 +160,7 @@ const trimToCap = async (maxEvents: number) => {
     return 0;
   }
 
+  // Drop oldest first to preserve most recent offline activity.
   const toDelete = total - maxEvents;
   const oldestKeys = await readOldestKeys(toDelete);
 
@@ -281,6 +283,7 @@ const peekByDocument = async (documentId: string, limit: number) => {
 
 const ackThrough = async (maxInclusiveKey: number) => {
   await withStore("readwrite", async (store) => {
+    // Bulk ACK everything up to the synced high-water mark.
     const range = IDBKeyRange.upperBound(maxInclusiveKey);
     store.delete(range);
   });

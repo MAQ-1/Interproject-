@@ -33,9 +33,6 @@ type VerificationData = {
   createdAt?: string;
 };
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:3001";
-
 const fmt = (value: unknown, digits = 2) =>
   typeof value === "number" && Number.isFinite(value)
     ? value.toFixed(digits)
@@ -47,6 +44,7 @@ const fint = (value: unknown) =>
     : "—";
 
 const fdur = (value: unknown) => {
+  // Convert milliseconds to a compact minutes/seconds label.
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   const totalSeconds = Math.max(0, Math.round(value / 1000));
   const m = Math.floor(totalSeconds / 60);
@@ -68,6 +66,7 @@ export default function VerifyPage() {
   const [data, setData] = useState<VerificationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     if (!sessionId) {
@@ -93,6 +92,7 @@ export default function VerifyPage() {
       }
     };
 
+    // Poll briefly while analytics are being generated server-side.
     void fetchData();
     const interval = setInterval(fetchData, 4000);
 
@@ -110,6 +110,7 @@ export default function VerifyPage() {
   );
 
   const statusStyle =
+    // Map score ranges to visual risk states.
     typeof score === "number"
       ? score > 70
         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
@@ -118,13 +119,32 @@ export default function VerifyPage() {
           : "bg-red-500/10 text-red-400 border-red-500/20"
       : "bg-zinc-800 text-zinc-400 border-zinc-700";
 
-  const openPdf = () => {
-    if (!sessionId) return;
-    window.open(
-      `${API_BASE_URL}/api/sessions/verify/${sessionId}/pdf`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+  const openPdf = async () => {
+    // Request PDF as blob and trigger a client-side download.
+    if (!sessionId || downloadingPdf) return;
+
+    try {
+      setDownloadingPdf(true);
+      setError(null);
+
+      const response = await api.get(`/api/sessions/verify/${sessionId}/pdf`, {
+        responseType: "blob",
+      });
+
+      const blobUrl = window.URL.createObjectURL(response.data as Blob);
+      const anchor = window.document.createElement("a");
+      anchor.href = blobUrl;
+      anchor.download = `vi-notes-verification-${sessionId}.pdf`;
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (downloadError) {
+      console.error(downloadError);
+      setError("Failed to download PDF report. Please try again.");
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   if (loading) {
@@ -173,8 +193,8 @@ export default function VerifyPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button onClick={openPdf} size="lg" className="rounded-xl font-bold bg-[var(--text)] text-[var(--base)] hover:opacity-90">
-              Download PDF
+            <Button onClick={openPdf} size="lg" disabled={downloadingPdf} className="rounded-xl font-bold bg-[var(--text)] text-[var(--base)] hover:opacity-90 disabled:opacity-60">
+              {downloadingPdf ? "Downloading..." : "Download PDF"}
             </Button>
             <Button onClick={() => navigate(-1)} variant="outline" size="lg" className="rounded-xl font-bold border-zinc-800">
               Files

@@ -26,6 +26,7 @@ const LoginPage = ({ onAuth }: LoginPageProps) => {
   } | null>(null);
 
   useEffect(() => {
+    // Show one-time success feedback after redirect from registration.
     if (searchParams.get("registered") !== "1") {
       return;
     }
@@ -45,6 +46,7 @@ const LoginPage = ({ onAuth }: LoginPageProps) => {
     setIsSubmitting(true);
 
     try {
+      // Login returns access token; refresh token stays cookie-based.
       const res = await api.post<AccessTokenResponse>("/api/auth/login", {
         email,
         password,
@@ -53,6 +55,7 @@ const LoginPage = ({ onAuth }: LoginPageProps) => {
       onAuth(res.data.accessToken);
       navigate("/files", { replace: true });
     } catch (err: unknown) {
+      // Prefer API error text; otherwise show connectivity guidance.
       let message = "Something went wrong";
 
       if (axios.isAxiosError(err)) {

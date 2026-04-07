@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import type { AccessTokenResponse } from "@shared/auth";
 import { api, getAccessToken, setAccessToken, clearAuthSession } from "./api";
 import Navbar from "./components/Navbar";
-import FilesPage from "./pages/FilesPage";
-import LoginPage from "./pages/LoginPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import RegisterPage from "./pages/RegisterPage";
-import VerifyPage from "./pages/VerifyPage";
 import GuestRoute from "./routes/GuestRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
-import FileOpen from "./pages/FileOpen";
-import LandingPage from "./pages/LandingPage";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const FilesPage = lazy(() => import("./pages/FilesPage"));
+const FileOpen = lazy(() => import("./pages/FileOpen"));
+const VerifyPage = lazy(() => import("./pages/VerifyPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 function App() {
   const navigate = useNavigate();
@@ -118,65 +119,67 @@ function App() {
         {isBootstrappingAuth ? (
           <div className="loading-card">Loading your workspace...</div>
         ) : (
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <LandingPage />
-              }
-            />
+          <Suspense fallback={<div className="loading-card">Loading your workspace...</div>}>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <LandingPage />
+                }
+              />
 
-            <Route
-              path="/login"
-              element={
-                <GuestRoute isAuthenticated={isAuth}>
-                  <LoginPage onAuth={setAccessTokenState} />
-                </GuestRoute>
-              }
-            />
+              <Route
+                path="/login"
+                element={
+                  <GuestRoute isAuthenticated={isAuth}>
+                    <LoginPage onAuth={setAccessTokenState} />
+                  </GuestRoute>
+                }
+              />
 
-            <Route
-              path="/register"
-              element={
-                <GuestRoute isAuthenticated={isAuth}>
-                  <RegisterPage />
-                </GuestRoute>
-              }
-            />
+              <Route
+                path="/register"
+                element={
+                  <GuestRoute isAuthenticated={isAuth}>
+                    <RegisterPage />
+                  </GuestRoute>
+                }
+              />
 
-            <Route
-              path="/files"
-              element={
-                <ProtectedRoute isAuthenticated={isAuth}>
-                  <FilesPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/files"
+                element={
+                  <ProtectedRoute isAuthenticated={isAuth}>
+                    <FilesPage />
+                  </ProtectedRoute>
+                }
+              />
 
 
-            <Route
-              path="/fileOpen"
-              element={
-                <ProtectedRoute isAuthenticated={isAuth}>
-                  <FileOpen />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/fileOpen"
+                element={
+                  <ProtectedRoute isAuthenticated={isAuth}>
+                    <FileOpen />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/verify/:sessionId"
-              element={
-                <ProtectedRoute isAuthenticated={isAuth}>
-                  <VerifyPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/verify/:sessionId"
+                element={
+                  <ProtectedRoute isAuthenticated={isAuth}>
+                    <VerifyPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="*"
-              element={<NotFoundPage isAuthenticated={isAuth} />}
-            />
-          </Routes>
+              <Route
+                path="*"
+                element={<NotFoundPage isAuthenticated={isAuth} />}
+              />
+            </Routes>
+          </Suspense>
           
         )}
       </main>

@@ -46,6 +46,7 @@ export const useDocument = (options?: { autoLoad?: boolean }) => {
   }, []);
 
   useEffect(() => {
+    // Allow consumers to fully control when list loading starts.
     if (!autoLoad) {
       setIsLoading(false);
       return;
@@ -87,6 +88,7 @@ export const useDocument = (options?: { autoLoad?: boolean }) => {
           RenameDocumentInput
         >(`/api/documents/${documentId}/rename`, { name });
 
+        // Clear row-level error only for the document being renamed.
         setRenameErrors((prev) => ({ ...prev, [documentId]: null }));
         setDocuments((prev) =>
           prev.map((document) =>
@@ -135,6 +137,7 @@ export const useDocument = (options?: { autoLoad?: boolean }) => {
         UpdateDocumentContentInput
       >(`/api/documents/${documentId}/content`, { content });
 
+      // Keep list metadata fresh after content edits.
       setDocuments((prev) =>
         prev.map((document) =>
           document._id === documentId

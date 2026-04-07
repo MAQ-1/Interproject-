@@ -54,13 +54,13 @@ const FilesPage = () => {
     const trimmed = editingName.trim();
     if (!trimmed) {
       return;
-    }
+    // Check if there are no documents after loading is complete.
 
     const renamed = await renameDocument(documentId, trimmed);
     if (!renamed) {
       return;
     }
-
+    // Handle document creation and navigate to the new document.
     setEditingId(null);
     setEditingName("");
   };
@@ -82,7 +82,7 @@ const FilesPage = () => {
       <div className="w-full h-full min-h-[calc(100vh-100px)] py-12 px-6 flex flex-col items-center font-sans ">
       <div className="w-full max-w-5xl flex flex-col gap-10">
         
-        {/* Header Section */}
+    // Rename the document and reset editing state on success.
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-2">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-800/40 text-orange-400 text-xs font-semibold tracking-widest uppercase mb-4"
@@ -99,13 +99,11 @@ const FilesPage = () => {
           </div>
         </div>
 
-        {/* Create Input Area */}
         <div className="p-6 md:p-8 rounded-2xl border border-white/[0.07] dark:border-white/[0.07] relative overflow-hidden shadow-2xl" 
              style={{ 
                background: "rgba(20,20,20,0.6)", 
                backdropFilter: "blur(12px)" 
              }}>
-           {/* Subtle warm glow inside the card */}
            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-orange-600/10 blur-[90px] rounded-full pointer-events-none" />
            
            <form className="relative z-10 flex flex-col sm:flex-row gap-4 w-full" onSubmit={handleCreate}>
@@ -139,7 +137,6 @@ const FilesPage = () => {
           </div>
         )}
 
-        {/* Empty State */}
         {isEmpty && (
            <div className="flex flex-col items-center justify-center py-24 px-6 text-center rounded-2xl border border-white/[0.05] relative overflow-hidden" 
                 style={{ background: "rgba(0,0,0,0.4)" }}>
@@ -164,7 +161,6 @@ const FilesPage = () => {
            </div>
         )}
 
-        {/* Document Grid */}
         {!isLoading && documents.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {documents.map((document) => {
@@ -263,5 +259,6 @@ const FilesPage = () => {
     </div>
   );
 };
+}
 
 export default FilesPage;

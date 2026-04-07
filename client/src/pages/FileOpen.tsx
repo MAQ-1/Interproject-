@@ -63,14 +63,17 @@ const STORAGE_KEY = "writing_tracker_files";
 
 const DRAFT_PREFIX = "draft_";
 
+// Persist unsaved editor content for the current file.
 function saveDraft(fileId: string, content: string) {
   localStorage.setItem(`${DRAFT_PREFIX}${fileId}`, content);
 }
 
+// Load draft content if user left before saving.
 function loadDraft(fileId: string): string | null {
   return localStorage.getItem(`${DRAFT_PREFIX}${fileId}`);
 }
 
+// Remove draft after a successful session save.
 function clearDraft(fileId: string) {
   localStorage.removeItem(`${DRAFT_PREFIX}${fileId}`);
 }
@@ -86,6 +89,7 @@ const DEFAULT_FORMATTING = {
 };
 
 function migrationFileData(file: any): FileData {
+  // Backfill missing fields so older local data remains valid.
   return {
     id: file.id || "",
     name: file.name || "",
@@ -104,6 +108,7 @@ function migrationFileData(file: any): FileData {
 
 function loadFiles(): Record<string, FileData> {
   try {
+    // Load and normalize all locally cached file snapshots.
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     const migratedData: Record<string, FileData> = {};
     for (const fileId in data) {
@@ -116,10 +121,12 @@ function loadFiles(): Record<string, FileData> {
 }
 
 function saveFiles(files: Record<string, FileData>) {
+  // Store full file map (content, sessions, formatting, scroll).
   localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
 }
 
 function getFileData(fileId: string, fileName: string): FileData {
+  // Return existing local state, or create a clean default record.
   const files = loadFiles();
   if (files[fileId]) {
     return migrationFileData(files[fileId]);
@@ -142,12 +149,14 @@ function getFileData(fileId: string, fileName: string): FileData {
 }
 
 function countWords(html: string): number {
+  // Count words from rendered HTML by stripping tags first.
   const text = html.replace(/<[^>]*>/g, " ").trim();
   if (!text) return 0;
   return text.split(/\s+/).filter(Boolean).length;
 }
 
 function countChars(html: string): number {
+  // Character count used for session stats.
   return html.replace(/<[^>]*>/g, "").length;
 }
 
@@ -287,6 +296,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   }, [customBg]);
 
   useEffect(() => {
+    // Initialize editor state from API + local cache and ensure a valid session id.
     const fetchAndInitDocument = async () => {
       try {
         const response = await api.get<DocumentDetail>(
@@ -433,6 +443,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   }, [avgWpm]);
 
   const getChangeBounds = (before: string, after: string) => {
+    // Compute minimal edited range for compact keystroke edit events.
     const maxPrefix = Math.min(before.length, after.length);
     let prefix = 0;
 
@@ -462,6 +473,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   };
 
   const flushKeystrokes = useCallback(async () => {
+    // Send queued keystrokes in one patch request.
     if (!sessionId || pendingKeystrokesRef.current.length === 0) return;
 
     const batch = pendingKeystrokesRef.current.splice(
@@ -476,6 +488,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
 
   const queueKeystrokes = useCallback(
     (events: any[]) => {
+      // Debounce sync to reduce API chatter while typing.
       pendingKeystrokesRef.current.push(...events);
 
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
@@ -488,6 +501,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   );
 
   const handleSaveSession = useCallback(async () => {
+    // Persist editor content, close current session, and start a fresh one.
     if (isSavingRef.current) return;
     isSavingRef.current = true;
 
@@ -648,6 +662,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // Track timing metrics and key-down events for behavior analysis.
       if ((e.ctrlKey || e.metaKey) && e.key === "s") return;
 
       const content = editorRef.current?.innerHTML || "";
@@ -684,6 +699,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
 
   const handleKeyUp = useCallback(
     (e: React.KeyboardEvent) => {
+      // Record key-up to preserve full key lifecycle in telemetry.
       if ((e.ctrlKey || e.metaKey) && e.key === "s") return;
 
       const now = Date.now();
@@ -694,6 +710,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
+      // Force plain-text paste and capture paste metadata.
       e.preventDefault();
 
       const text = e.clipboardData.getData("text/plain");
@@ -727,6 +744,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   );
 
   const handleInput = useCallback(() => {
+    // Compare previous/current HTML and queue semantic edit events.
     const current = editorRef.current?.innerHTML || "";
     const previous = previousContentRef.current;
 
@@ -790,6 +808,7 @@ function Editor({ fileId, fileName, onClose }: EditorProps) {
   }, [fileId]);
 
   const exec = (cmd: string, value?: string) => {
+    // Wrapper for rich-text commands on the contentEditable editor.
     editorRef.current?.focus();
     document.execCommand(cmd, false, value);
   };
@@ -1267,185 +1286,6 @@ function PremiumStatItem({
       <strong className={`font-mono ${toneClass}`}>{value}</strong>
     </span>
   );
-}
-
-function PremiumSessionStat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number | string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="text-center">
-      <div className={`text-2xl font-bold mb-1 ${accent ? "text-[#FF6A00]" : "text-white"}`}>
-        {value}
-      </div>
-      <div className="text-xs text-white/50 uppercase tracking-wider font-bold">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function PremiumOverviewCard({
-  label,
-  value,
-  icon,
-  accent,
-  progressRingValue,
-}: {
-  label: string;
-  value: number | string;
-  icon: string;
-  accent?: boolean;
-  progressRingValue?: number;
-}) {
-  const showProgressRing = label === "Avg WPM" && typeof progressRingValue === "number";
-
-  return (
-    <div className="p-6 rounded-2xl bg-black/30 backdrop-blur-sm border border-white/10 shadow-xl transition-all duration-200 hover:border-[#FF6A00]/20 hover:shadow-lg hover:-translate-y-1">
-      <div className="text-center space-y-4">
-        <div className="text-3xl">{icon}</div>
-        <div className="flex items-center justify-center gap-3">
-          <div className={`text-2xl font-bold ${accent ? "text-[#FF6A00]" : "text-white"}`}>
-            {value}
-          </div>
-          {showProgressRing && (
-            <SubtleProgressRing value={progressRingValue} max={120} />
-          )}
-        </div>
-        <div className="text-sm text-white/60 uppercase tracking-wider font-bold">
-          {label}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SubtleProgressRing({ value, max }: { value: number; max: number }) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 10);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const size = 34;
-  const strokeWidth = 3;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const normalized = Math.max(0, Math.min(value / max, 1));
-  const dashOffset = circumference * (1 - normalized);
-
-  return (
-    <div
-      className="opacity-0 translate-y-1"
-      style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? "translateY(0)" : "translateY(4px)",
-        transition: "opacity 520ms ease, transform 520ms ease",
-      }}
-      aria-hidden="true"
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.12)"
-          strokeWidth={strokeWidth}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255, 140, 66, 0.65)"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          strokeDasharray={circumference}
-          strokeDashoffset={isVisible ? dashOffset : circumference}
-          style={{ transition: "stroke-dashoffset 520ms ease" }}
-        />
-      </svg>
-    </div>
-  );
-}
-
-function Badge({
-  color,
-  label,
-  pulse,
-}: {
-  color: string;
-  label: string;
-  pulse?: boolean;
-}) {
-  return <PremiumBadge color={color} label={label} pulse={pulse} />;
-}
-
-function ToolBtn({
-  label,
-  onClick,
-  bold,
-  italic,
-  underline,
-  strike,
-  title,
-  centerAlign,
-}: {
-  label: string;
-  onClick: () => void;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-  strike?: boolean;
-  title?: string;
-  centerAlign?: boolean;
-}) {
-  return (
-    <PremiumToolBtn
-      label={label}
-      onClick={onClick}
-      bold={bold}
-      italic={italic}
-      underline={underline}
-      strike={strike}
-      title={title}
-      centerAlign={centerAlign}
-    />
-  );
-}
-
-function StatItem({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number | string;
-  tone: "muted" | "accent";
-}) {
-  return <PremiumStatItem label={label} value={value} tone={tone} />;
-}
-
-function OverviewCard({
-  label,
-  value,
-  icon,
-  accent,
-}: {
-  label: string;
-  value: number | string;
-  icon: string;
-  accent?: boolean;
-}) {
-  return <PremiumOverviewCard label={label} value={value} icon={icon} accent={accent} />;
 }
 
 export default function FileOpen() {
