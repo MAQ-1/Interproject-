@@ -8,8 +8,10 @@
   --base: #050505;
   --surface: #131313;
   --surface-soft: #1a1a1a;
+  --surface-elevated: #1f1f1f;
   --text: #f1f1eb;
   --muted: #b7b7ad;
+  --text-soft: #8f8f87;
   --border: #2a2a2a;
 
   --brand: #f2b660;
@@ -19,14 +21,21 @@
 
   --focus-ring: #f2b660;
   --shadow-color: 0 0 0;
+  --overlay-black-40: rgba(0, 0, 0, 0.4);
+  --overlay-black-30: rgba(0, 0, 0, 0.3);
+  --overlay-black-20: rgba(0, 0, 0, 0.2);
+  --overlay-white-10: rgba(255, 255, 255, 0.1);
+  --overlay-white-05: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="light"] {
   --base: #f8f8f6;
   --surface: #ffffff;
   --surface-soft: #f0f0ed;
+  --surface-elevated: #ecece7;
   --text: #2e2e29;
   --muted: #65655e;
+  --text-soft: #787870;
   --border: #d7d7d1;
 
   --brand: #1f6d57;
@@ -36,6 +45,11 @@
 
   --focus-ring: #1f6d57;
   --shadow-color: 12 18 20;
+  --overlay-black-40: rgba(21, 21, 19, 0.08);
+  --overlay-black-30: rgba(21, 21, 19, 0.06);
+  --overlay-black-20: rgba(21, 21, 19, 0.04);
+  --overlay-white-10: rgba(21, 21, 19, 0.1);
+  --overlay-white-05: rgba(21, 21, 19, 0.05);
 }
 
 * {
@@ -70,6 +84,23 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body,
+button,
+input,
+textarea,
+select,
+a,
+svg,
+div,
+section,
+article {
+  transition:
+    color 0.22s ease,
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
 }
 
 /* Cinematic layered background — base gradient */
@@ -134,6 +165,239 @@ body::after {
 
 [data-theme="light"] #root::before {
   display: none;
+}
+
+/* Light theme text colors */
+[data-theme="light"] .text-white {
+  color: var(--text) !important;
+}
+
+[data-theme="light"] .text-white\/95 {
+  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/80 {
+  color: color-mix(in srgb, var(--text) 80%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/50 {
+  color: color-mix(in srgb, var(--text) 50%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/40 {
+  color: color-mix(in srgb, var(--text) 40%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/30 {
+  color: color-mix(in srgb, var(--text) 30%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/20 {
+  color: color-mix(in srgb, var(--text) 45%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/60 {
+  color: color-mix(in srgb, var(--text) 72%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/55 {
+  color: color-mix(in srgb, var(--text) 66%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/65 {
+  color: color-mix(in srgb, var(--text) 77%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/70 {
+  color: color-mix(in srgb, var(--text) 82%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/90 {
+  color: color-mix(in srgb, var(--text) 94%, transparent) !important;
+}
+
+[data-theme="light"] .text-white\/75 {
+  color: color-mix(in srgb, var(--text) 85%, transparent) !important;
+}
+
+[data-theme="light"] .placeholder-white\/30::placeholder {
+  color: color-mix(in srgb, var(--text) 30%, transparent) !important;
+}
+
+[data-theme="light"] .bg-black\/40 {
+  background-color: var(--overlay-black-40) !important;
+}
+
+[data-theme="light"] .bg-black\/30 {
+  background-color: var(--overlay-black-30) !important;
+}
+
+[data-theme="light"] .bg-black\/20 {
+  background-color: var(--overlay-black-20) !important;
+}
+
+[data-theme="light"] .bg-white\/10 {
+  background-color: var(--overlay-white-10) !important;
+}
+
+[data-theme="light"] .bg-white\/5 {
+  background-color: var(--overlay-white-05) !important;
+}
+
+[data-theme="light"] .bg-white\/\[0\.02\],
+[data-theme="light"] .bg-white\/\[0\.03\],
+[data-theme="light"] .bg-white\/\[0\.04\] {
+  background-color: color-mix(in srgb, var(--surface-elevated) 88%, transparent) !important;
+}
+
+[data-theme="light"] .border-white\/20,
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/5,
+[data-theme="light"] .border-white\/\[0\.07\],
+[data-theme="light"] .border-white\/\[0\.06\],
+[data-theme="light"] .border-white\/\[0\.08\],
+[data-theme="light"] .border-white\/\[0\.05\],
+[data-theme="light"] .border-white\/\[0\.04\] {
+  border-color: color-mix(in srgb, var(--border) 88%, transparent) !important;
+}
+
+[data-theme="light"] .bg-\[\#0B0B0B\] {
+  background-color: var(--base) !important;
+}
+
+[data-theme="light"] .bg-\[\#0D0D0D\]\/50 {
+  background-color: color-mix(in srgb, var(--surface) 92%, transparent) !important;
+}
+
+[data-theme="light"] .shadow-xl,
+[data-theme="light"] .shadow-2xl,
+[data-theme="light"] .shadow-lg,
+[data-theme="light"] .shadow-md {
+  box-shadow:
+    0 8px 28px rgba(var(--shadow-color), 0.1),
+    0 0 0 1px color-mix(in srgb, var(--border) 65%, transparent) inset !important;
+}
+
+[data-theme="light"] .landing-page {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .landing-page .text-white {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/95 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/90 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/80 {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/70 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/65 {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/60 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/55 {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/50 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/45 {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/40 {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/30 {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/25 {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme="light"] .landing-page .text-white\/20 {
+  color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="light"] .landing-page .bg-black\/40 {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="light"] .landing-page .bg-black\/30 {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="light"] .landing-page .bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme="light"] .landing-page .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="light"] .landing-page .bg-white\/\[0\.02\],
+[data-theme="light"] .landing-page .bg-white\/\[0\.03\],
+[data-theme="light"] .landing-page .bg-white\/\[0\.04\] {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme="light"] .landing-page .border-white\/20,
+[data-theme="light"] .landing-page .border-white\/10,
+[data-theme="light"] .landing-page .border-white\/5,
+[data-theme="light"] .landing-page .border-white\/\[0\.1\],
+[data-theme="light"] .landing-page .border-white\/\[0\.08\],
+[data-theme="light"] .landing-page .border-white\/\[0\.07\],
+[data-theme="light"] .landing-page .border-white\/\[0\.06\],
+[data-theme="light"] .landing-page .border-white\/\[0\.05\],
+[data-theme="light"] .landing-page .border-white\/\[0\.04\] {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="light"] .file-open-page {
+  background: var(--base) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="light"] .file-open-page [style*="rgba(0,0,0"],
+[data-theme="light"] .file-open-page [class*="bg-black/"] {
+  background-color: color-mix(in srgb, var(--surface) 94%, transparent) !important;
+}
+
+[data-theme="light"] .file-open-page [class*="border-white/"] {
+  border-color: color-mix(in srgb, var(--border) 88%, transparent) !important;
+}
+
+[data-theme="light"] .files-page {
+  color: var(--text);
+}
+
+[data-theme="light"] .files-page [style*="rgba(20,20,20"],
+[data-theme="light"] .files-page [style*="rgba(0,0,0,0.4)"] {
+  background: color-mix(in srgb, var(--surface) 94%, transparent) !important;
+}
+
+[data-theme="light"] .files-page [style*="rgba(255,255,255,0.15)"] {
+  box-shadow: 0 8px 26px rgba(var(--shadow-color), 0.11) !important;
 }
 
 .app-shell {

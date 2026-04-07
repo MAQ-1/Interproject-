@@ -24,11 +24,16 @@ const Navbar = ({
   const location = useLocation();
 
   return (
-    <header className=" top-0 left-0 right-0 z-50 p-4">
-      <nav className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-8 py-5 rounded-3xl border border-white/[0.12] relative overflow-hidden shadow-2xl backdrop-blur-2xl"
+    <header className=" top-0 left-0 right-0 z-50 p-4 ">
+      <nav className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-8 py-5 rounded-3xl border relative overflow-hidden shadow-2xl backdrop-blur-2xl"
            style={{ 
-             background: "linear-gradient(135deg, rgba(15,15,15,0.9) 0%, rgba(25,25,25,0.8) 50%, rgba(20,20,20,0.9) 100%)",
-             boxShadow: "0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 0 60px rgba(251,146,60,0.1)"
+             background: isLightMode 
+               ? "linear-gradient(135deg, rgba(248,248,246,0.9) 0%, rgba(240,240,237,0.8) 50%, rgba(255,255,255,0.9) 100%)"
+               : "linear-gradient(135deg, rgba(15,15,15,0.9) 0%, rgba(25,25,25,0.8) 50%, rgba(20,20,20,0.9) 100%)",
+             borderColor: isLightMode ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.12)",
+             boxShadow: isLightMode 
+               ? "0 20px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05) inset, 0 0 60px rgba(194,65,12,0.1)"
+               : "0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 0 60px rgba(251,146,60,0.1)"
            }}>
         
         {/* Animated gradient overlay */}
@@ -39,7 +44,7 @@ const Navbar = ({
         </div>
         
         {/* Brand */}
-        <Link className="relative z-10 flex items-center gap-4 text-white group transition-all duration-500 hover:scale-110" 
+        <Link className={`relative z-10 flex items-center gap-4 group transition-all duration-500 hover:scale-110 ${isLightMode ? 'text-gray-900' : 'text-white'}`} 
               to="/">
           <div className="relative">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-500 group-hover:rotate-12 group-hover:scale-110" 
@@ -52,7 +57,11 @@ const Navbar = ({
             <div className="absolute -inset-2 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
           </div>
           <div className="relative">
-            <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-white via-orange-100 to-orange-200 bg-clip-text text-transparent drop-shadow-sm">
+            <span className={`text-2xl font-black tracking-tight bg-gradient-to-r bg-clip-text text-transparent drop-shadow-sm ${
+              isLightMode 
+                ? 'from-gray-900 via-orange-800 to-orange-900' 
+                : 'from-white via-orange-100 to-orange-200'
+            }`}>
               Vi<span className="bg-gradient-to-r from-orange-400 via-orange-300 to-yellow-300 bg-clip-text text-transparent">Notes</span>
             </span>
             <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-red-400 group-hover:w-full transition-all duration-500" />
@@ -65,17 +74,22 @@ const Navbar = ({
             to="/files"
             className={`group relative inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-500 hover:scale-105 overflow-hidden ${
               location.pathname === "/files" 
-                ? "text-white shadow-2xl" 
-                : "text-white/80 hover:text-white"
+                ? (isLightMode ? "text-white shadow-2xl" : "text-white shadow-2xl")
+                : (isLightMode ? "text-gray-700 hover:text-gray-900" : "text-white/80 hover:text-white")
             }`}
             style={location.pathname === "/files" ? 
               { 
                 background: "linear-gradient(135deg, #c2410c 0%, #ea580c 50%, #f97316 100%)", 
                 boxShadow: "0 8px 32px rgba(194,65,12,0.5), 0 0 0 1px rgba(255,255,255,0.1) inset" 
               } : 
-              { background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
+              { 
+                background: isLightMode ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)", 
+                backdropFilter: "blur(10px)" 
+              }}>
             {location.pathname !== "/files" && (
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className={`absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                isLightMode ? 'from-orange-500/30 to-red-500/30' : 'from-orange-500/20 to-red-500/20'
+              }`} />
             )}
             <Files size={18} className="relative z-10" />
             <span className="relative z-10">Files</span>
@@ -86,31 +100,45 @@ const Navbar = ({
 
           <button
             onClick={onToggleTheme}
-            className="group relative inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm text-white/80 hover:text-white transition-all duration-500 hover:scale-105 overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}
+            className={`group relative inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-500 hover:scale-105 overflow-hidden ${
+              isLightMode ? 'text-gray-700 hover:text-gray-900' : 'text-white/80 hover:text-white'
+            }`}
+            style={{ 
+              background: isLightMode ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)", 
+              backdropFilter: "blur(10px)" 
+            }}
             aria-label="Toggle theme">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className={`absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+              isLightMode ? 'from-blue-500/30 to-purple-500/30' : 'from-blue-500/20 to-purple-500/20'
+            }`} />
             <div className="relative z-10 transition-transform duration-500 group-hover:rotate-180">
               {isLightMode ? <Moon size={18} /> : <Sun size={18} />}
             </div>
             <span className="relative z-10">{isLightMode ? "Dark" : "Light"}</span>
           </button>
 
-          <a
+          {/* <a
             href="mailto:contact@vinotes.app"
             className="group relative inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm text-white/80 hover:text-white transition-all duration-500 hover:scale-105 overflow-hidden"
             style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
             <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <Mail size={18} className="relative z-10 group-hover:animate-bounce" />
             <span className="relative z-10">Contact</span>
-          </a>
+          </a> */}
 
           <button
             onClick={onLogout}
             disabled={!isAuthenticated}
-            className="group relative inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm text-white/80 hover:text-red-400 transition-all duration-500 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
-            <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            className={`group relative inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-500 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden ${
+              isLightMode ? 'text-gray-700 hover:text-red-600' : 'text-white/80 hover:text-red-400'
+            }`}
+            style={{ 
+              background: isLightMode ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)", 
+              backdropFilter: "blur(10px)" 
+            }}>
+            <div className={`absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+              isLightMode ? 'from-red-500/30 to-pink-500/30' : 'from-red-500/20 to-pink-500/20'
+            }`} />
             <LogOut size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
             <span className="relative z-10">Logout</span>
           </button>
