@@ -12,6 +12,9 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-9.3-47A248?logo=mongodb)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-red)]()
 
+**🌟 Live Demo:** [https://interproject-client.vercel.app](https://interproject-client.vercel.app)  
+**🔌 API Backend:** [https://interproject-3.onrender.com](https://interproject-3.onrender.com)
+
 </div>
 
 ---
