@@ -12,11 +12,12 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "https://vi-notes-client.vercel.app",
+  "https://interproject-client.vercel.app",
   config.CLIENT_ORIGIN,
 ];
 
 const isAllowedVercelOrigin = (origin: string) => {
-  return /^https:\/\/vi-notes-client(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
+  return /^https:\/\/(vi-notes-client|interproject-client)(-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
 };
 
 const isAllowedDevOrigin = (origin: string) => {
