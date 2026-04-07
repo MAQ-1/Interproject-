@@ -1,6 +1,6 @@
 /// <reference path="../types/express.d.ts" />
 import type { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../services/authService.js";
+import { verifyAccessToken } from "../services/authService";
 import { getServiceErrorResponse } from "../services/errors.js";
 
 export const authMiddleware = (
