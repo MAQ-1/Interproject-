@@ -54,6 +54,7 @@ const FilesPage = () => {
     const trimmed = editingName.trim();
     if (!trimmed) {
       return;
+    }
     // Check if there are no documents after loading is complete.
 
     const renamed = await renameDocument(documentId, trimmed);
@@ -259,6 +260,5 @@ const FilesPage = () => {
     </div>
   );
 };
-}
 
 export default FilesPage;
