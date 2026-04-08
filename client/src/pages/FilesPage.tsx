@@ -83,7 +83,7 @@ const FilesPage = () => {
       <div className="w-full h-full min-h-[calc(100vh-100px)] py-12 px-6 flex flex-col items-center font-sans ">
       <div className="w-full max-w-5xl flex flex-col gap-10">
         
-    // Rename the document and reset editing state on success.
+    
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-2">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-800/40 text-orange-400 text-xs font-semibold tracking-widest uppercase mb-4"
